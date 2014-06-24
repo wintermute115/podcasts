@@ -51,6 +51,26 @@ if ($caller eq "boot" && -e($lockfile))
 	unlink($lockfile);
 }
 
+# cURL object
+my $curl = Net::Curl::Easy->new;
+
+#Check that we can connect to the network
+try
+{
+	$curl->setopt(CURLOPT_PROGRESSFUNCTION, \&no_progress);
+	$curl->setopt(CURLOPT_NOPROGRESS, 0);
+	$curl->setopt(CURLOPT_FOLLOWLOCATION, 1);
+	$curl->setopt(CURLOPT_CONNECT_ONLY, 1);
+	$curl->setopt(CURLOPT_FAILONERROR, 1);
+	$curl->setopt(CURLOPT_URL, "http://www.google.com");
+	$curl->perform();
+}
+catch
+{
+	die ("Cannot connect to the Internet\n");
+}
+
+
 # Make sure we're not already downloading podcasts
 die("Another download is currently in progress; Please try again later\n") if (-e($lockfile));
 open(my $lockhandle, ">", $lockfile) or die ("Cannot create lockfile: $!");
@@ -68,9 +88,6 @@ else
 }
 $conn->query($sql);
 my $rs = $conn->create_record_iterator;
-
-# cURL object
-my $curl = Net::Curl::Easy->new;
 
 # Number formatter
 my $formatter = new Number::Format(-thousands_sep   => ',',
@@ -96,6 +113,7 @@ while (my $row = $rs->each)
 		$curl->setopt(CURLOPT_PROGRESSFUNCTION, \&no_progress);
 		$curl->setopt(CURLOPT_NOPROGRESS, 0);
 		$curl->setopt(CURLOPT_FOLLOWLOCATION, 1);
+		$curl->setopt(CURLOPT_CONNECT_ONLY, 0);
 		$curl->setopt(CURLOPT_URL, $feedsrc);
 		$curl->setopt(CURLOPT_WRITEDATA, \$feed);
 		$curl->perform();
