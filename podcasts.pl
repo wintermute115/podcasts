@@ -36,13 +36,36 @@ my $archive = $root . "archive/";
 binmode STDOUT, ":utf8";
 
 # Commandline options
+my $list;
 my $podcast = "";
 my $caller = "user";
-my $result = GetOptions("caller=s"  => \$caller,
+my $result = GetOptions("list"      => \$list,
+	                    "caller=s"  => \$caller,
 	                    "podcast=s" => \$podcast);
 
 # MySQL object
 my $conn = mysql_connect();
+
+if ($list)
+{
+	#Provide a list of feeds in the database
+	print color 'bold';
+	print "Title" . " " x 15;
+	print "Last Recieved\n";
+	print color 'reset';
+	my $sql = "SELECT podcast_name, podcast_skip, podcast_last_downloaded FROM podcasts ORDER BY podcast_name ASC";
+	$conn->query($sql);
+	my $rs = $conn->create_record_iterator;
+	while (my $row = $rs->each) 
+	{		
+		print $row->[0] . " " x (20 - length($row->[0]));
+		print $row->[2] . "   ";
+		print ($row->[1] == '1' ? "Skip" : "    ");
+		print "\n";
+	}
+	exit;
+}
+
 
 
 if ($caller eq "boot" && -e($lockfile))
