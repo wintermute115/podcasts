@@ -57,6 +57,7 @@ my $curl = Net::Curl::Easy->new;
 #Check that we can connect to the network
 try
 {
+	$curl->pushopt(CURLOPT_HTTPHEADER, ["User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:30.0) Gecko/20100101 Firefox/30.0"]);
 	$curl->setopt(CURLOPT_PROGRESSFUNCTION, \&no_progress);
 	$curl->setopt(CURLOPT_NOPROGRESS, 0);
 	$curl->setopt(CURLOPT_FOLLOWLOCATION, 1);
@@ -109,14 +110,34 @@ while (my $row = $rs->each)
 		my ($hour, $min, $sec) = split(/:/, $time);
 		my $last_download = timelocal($sec, $min, $hour, $day, $mon - 1, $year - 1900);
 		my $feed;
+		my $broken = 0;
+		mkdir($archive) unless (-d($archive));
+		my $filename = $archive . $name . ".rss";
 		# set up cURL options
-		$curl->setopt(CURLOPT_PROGRESSFUNCTION, \&no_progress);
-		$curl->setopt(CURLOPT_NOPROGRESS, 0);
-		$curl->setopt(CURLOPT_FOLLOWLOCATION, 1);
-		$curl->setopt(CURLOPT_CONNECT_ONLY, 0);
-		$curl->setopt(CURLOPT_URL, $feedsrc);
-		$curl->setopt(CURLOPT_WRITEDATA, \$feed);
-		$curl->perform();
+		try 
+		{
+			$curl->pushopt(CURLOPT_HTTPHEADER, ["User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:30.0) Gecko/20100101 Firefox/30.0"]);
+			$curl->setopt(CURLOPT_PROGRESSFUNCTION, \&no_progress);
+			$curl->setopt(CURLOPT_NOPROGRESS, 0);
+			$curl->setopt(CURLOPT_FOLLOWLOCATION, 1);
+			$curl->setopt(CURLOPT_CONNECT_ONLY, 0);
+			$curl->setopt(CURLOPT_URL, $feedsrc);
+			$curl->setopt(CURLOPT_WRITEDATA, \$feed);
+			$curl->perform();
+		}
+		catch
+		{
+			$broken = 1; #putting next in here complains that it's exiting a subroutine
+		}
+		if ($broken)
+		{
+			print "\n";
+			open (my $archive_handle, ">>", $filename);
+			binmode $archive_handle, ":utf8";
+			print $archive_handle "Could not access RSS file: " . gettime() . "\n";
+			close ($archive_handle);
+			next FEED;
+		}
 
 		my $parser = XML::RSS->new();
 		if (substr($feed, 0, 3) eq chr(0x1f) . chr(0x8b) . chr(0x08)) # magic number for GZip files
@@ -127,11 +148,9 @@ while (my $row = $rs->each)
 		}
 		$feed =~ s/\x{feff}//g; # strip out wide spaces
 		# Write out the RSS file, in case we need to do diagnostics
-		mkdir($archive) unless (-d($archive));
-		my $filename = $archive . $name . ".rss";
 		open (my $archive_handle, ">", $filename);
 		binmode $archive_handle, ":utf8";
-		print $archive_handle $feed;
+		print $archive_handle $feed . "\n";
 		close ($archive_handle);
 		if (substr($feed, 0, 5) ne "<?xml" && substr($feed, 3, 5) ne "<?xml") #SGU feeds have three odd characters before the opening tag
 		{
@@ -147,7 +166,6 @@ while (my $row = $rs->each)
 			next FEED;
  		}
 		print "\n";
-		my $broken = 0;
 		try
 		{
 			$parser->parse($feed);
@@ -158,6 +176,7 @@ while (my $row = $rs->each)
 			$broken = 1; #putting next in here complains that it's exiting a subroutine
 		}
 		if ($broken) {
+			print "\n";
 			next FEED;
 		}
 		my $new_last_download = $last_download;
@@ -182,6 +201,7 @@ while (my $row = $rs->each)
 				writelog($note);
 				print $note . (length($note) == 80 ? "" : "\n"); #Adding a newline after an 80-char line results in a blank line
 				my $final_data;
+				$curl->pushopt(CURLOPT_HTTPHEADER, ["User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:30.0) Gecko/20100101 Firefox/30.0"]);
 				$curl->setopt(CURLOPT_NOPROGRESS, 0);
 				$curl->setopt(CURLOPT_PROGRESSFUNCTION, \&progress);
 				$curl->setopt(CURLOPT_URL, $url);
