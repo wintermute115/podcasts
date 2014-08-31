@@ -110,7 +110,14 @@ if ($podcast eq "")
 }
 else
 {
-	$sql .= "WHERE podcast_name = '$podcast' OR podcast_id = $podcast";
+	if ($podcast =~ /\D/)
+	{
+		$sql .= "WHERE podcast_name = '$podcast'";
+	}
+	else 
+	{
+		$sql .= "WHERE podcast_id = $podcast";
+	}
 }
 $conn->query($sql);
 my $rs = $conn->create_record_iterator;
