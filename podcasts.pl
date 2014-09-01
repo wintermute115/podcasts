@@ -59,11 +59,15 @@ if ($list)
 	my $rs = $conn->create_record_iterator;
 	while (my $row = $rs->each) 
 	{
+		if ($row->[2] == 1) 
+		{
+			print color 'grey8';
+		}
 		print $row->[0] . " " x (6 - length($row->[0]));
 		print $row->[1] . " " x (20 - length($row->[1]));
 		print $row->[3] . "   ";
-		print ($row->[2] == '1' ? "Skip" : "    ");
 		print "\n";
+		print color 'reset';
 	}
 	exit;
 }
