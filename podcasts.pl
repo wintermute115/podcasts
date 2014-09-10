@@ -74,9 +74,9 @@ if ($list)
 
 
 
-if ($caller eq "boot" && -e($lockfile))
+if (-e($lockfile) && ($caller eq "boot" || -C($lockfile) > 7200))
 {
-	#Didn't clean up the lockfile on shutdown	
+	#Didn't clean up the lockfile on shutdown
 	unlink($lockfile);
 }
 
