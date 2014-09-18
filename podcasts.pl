@@ -165,9 +165,13 @@ while (my $row = $rs->each)
 		{
 			$broken = 1; #putting next in here complains that it's exiting a subroutine
 		}
+		if (!defined($feed))
+		{
+			$broken = 1;
+		}
 		if ($broken)
 		{
-			print "\n";
+			print " -- Unreadable\n";
 			open (my $archive_handle, ">>", $filename);
 			binmode $archive_handle, ":utf8";
 			print $archive_handle "Could not access RSS file: " . gettime() . "\n";
