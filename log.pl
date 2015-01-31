@@ -1,8 +1,12 @@
 #!/usr/bin/perl -w
 
 use strict;
+use File::Copy qw(mv);
 
-my $logfile = "/home/ross/scripts/podcasts/podcasts.log";
+my $year = (localtime)[5] + 1900;
+
+my $logfile = "/home/ross/scripts/podcasts/logs/podcasts_" . $year . ".log";
+my $tempfile = "/home/ross/scripts/podcasts/logs/podcasts_temp.log";
 my $loghandle;
 
 sub writelog
@@ -14,6 +18,7 @@ sub writelog
 	print $loghandle gettime() . " -- " . $string . "\n";
 	print $loghandle "-" x 19 . "\n" if ($break == 1);
 	close($loghandle);
+	redirect();
 }
 
 sub gettime
@@ -26,6 +31,13 @@ sub gettime
 	 $mon  = (length($mon)  == 1 ? "0" . $mon  : $mon);
 	 $mday = (length($mday) == 1 ? "0" . $mday : $mday);
 	 return ((1900 + $year) . "-" . $mon . "-" . $mday . " " . $hour . ":" . $min . ":" . $sec);
+}
+
+sub redirect
+{
+	mv ($logfile, $tempfile);
+	sleep (1);
+	mv ($tempfile, $logfile);
 }
 
 1;

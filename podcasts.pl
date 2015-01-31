@@ -59,7 +59,7 @@ if ($list)
 	my $rs = $conn->create_record_iterator;
 	while (my $row = $rs->each) 
 	{
-		if ($row->[2] == 1) 
+		if ($row->[2] eq '1') 
 		{
 			print color 'grey8';
 		}
@@ -229,7 +229,7 @@ while (my $row = $rs->each)
 			my $type = $item->{'enclosure'}->{'type'};
 			my $url = $item->{'enclosure'}->{'url'};
 			$url = (defined($url) ? $url : "");
-			$url =~ /([^\/]*)$/; #separate out the filename
+			$url =~ /([^\/]*\.mp3)/; #separate out the filename
 			my $fname = $1;
 			$new_last_download = ($pubdate > $new_last_download ? $pubdate : $new_last_download);
 			next if ($pubdate <= $last_download); #If we've cycled through all the newer ones, stop now.
@@ -282,6 +282,8 @@ if ($count)
 		print $playlist_handle $playlist{$key} . "\n";
 	}
 	close($playlist_handle);
+	#Back up db to the cloud
+	system("mysqldump -upodcasts -ppodpass podcasts > '/home/ross/SpiderOak Hive/sql/podcasts.sql'");
 }
 unlink($lockfile) or die ("Cannot delete lockfile: $!");
 
