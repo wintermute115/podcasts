@@ -75,8 +75,8 @@ if ($list)
 if (-e($lockfile)) {
 	my $lockfile_created = (stat($lockfile))[9];
 	if ($caller eq "boot" || time() - $lockfile_created > 7200) {
-	#Didn't clean up the lockfile on shutdown
-	unlink($lockfile);		
+		#Didn't clean up the lockfile on shutdown
+		unlink($lockfile);		
 	}
 }
 
