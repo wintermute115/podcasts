@@ -72,12 +72,12 @@ if ($list)
 	exit;
 }
 
-
-
-if (-e($lockfile) && ($caller eq "boot" || -C($lockfile) > 7200))
-{
+if (-e($lockfile)) {
+	my $lockfile_created = (stat($lockfile))[9];
+	if ($caller eq "boot" || time() - $lockfile_created > 7200) {
 	#Didn't clean up the lockfile on shutdown
-	unlink($lockfile);
+	unlink($lockfile);		
+	}
 }
 
 # cURL object
