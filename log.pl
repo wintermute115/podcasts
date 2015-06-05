@@ -18,7 +18,7 @@ sub writelog
 	print $loghandle gettime() . " -- " . $string . "\n";
 	print $loghandle "-" x 19 . "\n" if ($break == 1);
 	close($loghandle);
-	redirect();
+#	redirect();
 }
 
 sub gettime
