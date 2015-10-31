@@ -54,12 +54,10 @@ if ($list)
 	print "Title" . " " x 15;
 	print "Last Recieved\n";
 	print color 'reset';
-	my $sql = "SELECT podcast_id, podcast_name, podcast_skip, podcast_last_downloaded FROM podcasts ORDER BY podcast_name ASC";
-	$conn->query($sql);
-	my $rs = $conn->create_record_iterator;
-	while (my $row = $rs->each) 
+	my $rs = get_podcast_rows($conn);
+	while (my $row = $rs->each)
 	{
-		if ($row->[2] eq '1') 
+		if ($row->[2] eq '1')
 		{
 			print color 'grey8';
 		}
@@ -76,7 +74,7 @@ if (-e($lockfile)) {
 	my $lockfile_created = (stat($lockfile))[9];
 	if ($caller eq "boot" || time() - $lockfile_created > 7200) {
 		#Didn't clean up the lockfile on shutdown
-		unlink($lockfile);		
+		unlink($lockfile);
 	}
 }
 
@@ -106,25 +104,8 @@ die("Another download is currently in progress; Please try again later\n") if (-
 open(my $lockhandle, ">", $lockfile) or die ("Cannot create lockfile: $!");
 close($lockhandle);
 
-# Set up the MySQL query
-my $sql = "SELECT podcast_id, podcast_name, podcast_feed, podcast_last_downloaded FROM podcasts ";
-if ($podcast eq "")
-{
-	$sql .= "WHERE podcast_skip = '0' ORDER BY podcast_name ASC";
-}
-else
-{
-	if ($podcast =~ /\D/)
-	{
-		$sql .= "WHERE podcast_name = '$podcast'";
-	}
-	else 
-	{
-		$sql .= "WHERE podcast_id = $podcast";
-	}
-}
-$conn->query($sql);
-my $rs = $conn->create_record_iterator;
+my $rs = get_podcast_list($conn, $podcast);
+
 
 # Number formatter
 my $formatter = new Number::Format(-thousands_sep   => ',',
@@ -132,7 +113,7 @@ my $formatter = new Number::Format(-thousands_sep   => ',',
                                    -kilo_suffix     => 'Kb');
 
 FEED: # Step through the feeds
-while (my $row = $rs->each) 
+while (my $row = $rs->each)
 {
 	my $id = $row->[0];
 	my $name = $row->[1];
@@ -150,7 +131,7 @@ while (my $row = $rs->each)
 		mkdir($archive) unless (-d($archive));
 		my $filename = $archive . $name . ".rss";
 		# set up cURL options
-		try 
+		try
 		{
 			$curl->pushopt(CURLOPT_HTTPHEADER, ["User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:30.0) Gecko/20100101 Firefox/30.0"]);
 			$curl->setopt(CURLOPT_PROGRESSFUNCTION, \&no_progress);
@@ -264,7 +245,8 @@ while (my $row = $rs->each)
 		# Update the last downloaded time in the database
 		my ($new_sec, $new_min, $new_hr, $new_day, $new_mon, $new_year, $new_wday, $new_yday, $new_isdst) = localtime($new_last_download);
 		my $new_date = ($new_year + 1900) . "-" . sprintf("%0*d", 2, $new_mon + 1) . "-" . sprintf("%0*d", 2, $new_day) . " " . sprintf("%0*d", 2, $new_hr) . ":" . sprintf("%0*d", 2, $new_min) . ":" . sprintf("%0*d", 2, $new_sec);
-		$conn->query("UPDATE podcasts SET podcast_last_downloaded='$new_date' WHERE podcast_id=$id");
+		write_to_database($conn, $id, $new_date);
+
 }
 my $count = keys(%playlist);
 print color 'bold';
@@ -282,12 +264,11 @@ if ($count)
 		print $playlist_handle $playlist{$key} . "\n";
 	}
 	close($playlist_handle);
-	#Back up db to the cloud
-	system("mysqldump -upodcasts -ppodpass podcasts > '/home/ross/SpiderOak Hive/sql/podcasts.sql'");
+	dump_database();
 }
 unlink($lockfile) or die ("Cannot delete lockfile: $!");
 
-$conn->close;
+close_connection($conn);
 
 ## Helper functions start here
 

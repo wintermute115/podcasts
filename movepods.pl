@@ -111,8 +111,8 @@ if ($mode eq "i")
 }
 else
 {
-	#Back up the old playlist, in case we overwrote by accident
-	cp($iPod . $playlist, $iPod . $playlist . ".old") if ($mode eq "o");
+  #Back up the old playlist, in case we overwrote by accident
+  cp($iPod . $playlist, $iPod . $playlist . ".old") if ($mode eq "o");
   #Either append or overwite the playlist
   my $write_mode = ($mode eq "o" ? ">" : ">>");
   #Read from the computer
