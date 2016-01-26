@@ -41,7 +41,7 @@ my $date;
 my $podcast = "";
 my $caller = "user";
 my $result = GetOptions("list"      => \$list,
-						"date"      => \$date,
+                        "date"      => \$date,
                         "caller=s"  => \$caller,
                         "podcast=s" => \$podcast);
 
