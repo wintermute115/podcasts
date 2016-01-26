@@ -37,16 +37,18 @@ binmode STDOUT, ":utf8";
 
 # Commandline options
 my $list;
+my $date;
 my $podcast = "";
 my $caller = "user";
 my $result = GetOptions("list"      => \$list,
+						"date"      => \$date,
                         "caller=s"  => \$caller,
                         "podcast=s" => \$podcast);
 
 # MySQL object
 my $conn = mysql_connect();
 
-if ($list)
+if ($list || $date)
 {
 	#Provide a list of feeds in the database
 	print color 'bold';
@@ -54,7 +56,8 @@ if ($list)
 	print "Title" . " " x 15;
 	print "Last Recieved\n";
 	print color 'reset';
-	my $rs = get_podcast_rows($conn);
+	my $order = ($date ? "date" : "name");
+	my $rs = get_podcast_rows($conn, $order);
 	while (my $row = $rs->each)
 	{
 		if ($row->[2] eq '1')
