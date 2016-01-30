@@ -53,7 +53,8 @@ sub get_podcast_rows
 	my $conn = $_[0];
 	my $order = $_[1];
 	$order = ($order eq "date" ? "podcast_last_downloaded DESC" : "podcast_name ASC");
-	my $sql = "SELECT podcast_id, podcast_name, podcast_skip, podcast_last_downloaded FROM podcasts ORDER BY " . $order;
+	my $sql = "SELECT MAX(CHAR_LENGTH(podcast_id)) AS podcast_id, MAX(CHAR_LENGTH(podcast_name)) AS podcast_name, 1 AS podcast_skip, 18 AS podcast_last_downloaded, 1 AS sort FROM podcasts ";
+	$sql .= "UNION SELECT podcast_id, podcast_name, podcast_skip, podcast_last_downloaded, 2 FROM podcasts order by sort ASC, " . $order;
 	$conn->query($sql);
 	return $conn->create_record_iterator;
 }

@@ -15,7 +15,6 @@ use Term::ANSIColor;
 use Time::Local;
 use Try;
 use XML::RSS;
-use Clone 'clone';
 
 # MySQL functions
 require("/home/ross/scripts/podcasts/connect.pl");
@@ -54,18 +53,9 @@ if ($list || $date)
 	#Provide a list of feeds in the database
 	my $order = ($date ? "date" : "name");
 	my $rs = get_podcast_rows($conn, $order);
-	my $rs_copy = clone($rs);
-	my $id_len = 0;
-	my $name_len = 0;
-	while (my $row_copy = $rs_copy->each)
-	{
-		if (length($row_copy->[0]) > $id_len) {
-			$id_len = length($row_copy->[0]);
-		}
-		if (length($row_copy->[1]) > $name_len) {
-			$name_len = length($row_copy->[1]);
-		}
-	}
+	my $header_row = $rs->each;
+	my $id_len = $header_row->[0];
+	my $name_len = $header_row->[1];
 	print color 'bold';
 	print "ID" . " " x ($id_len - 1);
 	print "Title" . " " x ($name_len - 4);
