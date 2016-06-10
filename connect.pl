@@ -23,6 +23,37 @@ sub mysql_connect
 	return $conn;
 }
 
+sub toggle_podcast
+{
+	my $conn = $_[0];
+	my $podcast = $_[1];
+	my $toggle = $_[2];
+	my $where;
+	my $sql = "UPDATE podcasts set podcast_skip = ";
+	if ($toggle eq "on")
+	{
+		$sql .= "'0' ";
+	}
+	else
+	{
+		$sql .= "'1' ";
+	}
+	if ($podcast =~ /\D/)
+	{
+		$where = "WHERE podcast_name = '$podcast'";
+	}
+	else
+	{
+		$where = "WHERE podcast_id = $podcast";
+	}
+	$sql .= $where;
+	$conn->query($sql);
+	#Get details to return
+	$sql = "SELECT podcast_id, podcast_name, podcast_skip FROM podcasts " . $where;
+	$conn->query($sql);
+	return $conn->create_record_iterator;
+}
+
 sub get_podcast_list
 {
 	my $conn = $_[0];

@@ -38,12 +38,14 @@ binmode STDOUT, ":utf8";
 # Commandline options
 my $list;
 my $date;
+my $toggle = "";
 my $podcast = "";
 my $caller = "user";
 my $result = GetOptions("list"      => \$list,
                         "date"      => \$date,
                         "caller=s"  => \$caller,
-                        "podcast=s" => \$podcast);
+                        "podcast=s" => \$podcast,
+                        "toggle=s"  => \$toggle);
 
 # MySQL object
 my $conn = mysql_connect();
@@ -72,6 +74,23 @@ if ($list || $date)
 		print $row->[3] . "   ";
 		print "\n";
 		print color 'reset';
+	}
+	exit;
+}
+
+if ($toggle ne "" && $podcast ne "") {
+	# Toggle a podcast on or off
+	if ($toggle eq 'on' || $toggle eq 'off') {
+			my $rs = toggle_podcast($conn, $podcast, $toggle);
+			my $row = $rs->each;
+			my $id = $row->[0];
+			my $name = $row->[1];
+			my $skip = $row->[2];
+			print "Podcast '$name' is now ";
+			print ($skip eq '1' ? "off" : "on");
+			print "\n";
+	} else {
+		print "--toggle must be 'on' or 'off'\n";
 	}
 	exit;
 }
