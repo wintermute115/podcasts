@@ -38,11 +38,17 @@ binmode STDOUT, ":utf8";
 # Commandline options
 my $list;
 my $date;
+my $add;
+my $name = "";
+my $url = "";
 my $toggle = "";
 my $podcast = "";
 my $caller = "user";
 my $result = GetOptions("list"      => \$list,
                         "date"      => \$date,
+                        "add"       => \$add,
+                        "name=s"    => \$name,
+                        "url=s"     => \$url,
                         "caller=s"  => \$caller,
                         "podcast=s" => \$podcast,
                         "toggle=s"  => \$toggle);
@@ -76,6 +82,17 @@ if ($list || $date)
 		print color 'reset';
 	}
 	exit;
+}
+
+if ($add) {
+	# Add a new feed to the list
+	if ($name ne "" && $url ne "") {
+		$toggle = ($toggle eq "off" ? "off" : "on");
+		my $rs = add_podcast($conn, $name, $url, $toggle);
+		print "Podcast $name [$url] has been added\n";
+	} else {
+		print "--You must set a name and a url to add a podcast\n";
+	}
 }
 
 if ($toggle ne "" && $podcast ne "") {

@@ -54,6 +54,19 @@ sub toggle_podcast
 	return $conn->create_record_iterator;
 }
 
+sub add_podcast {
+	my $conn   = $_[0];
+	my $name   = $_[1];
+	my $url    = $_[2];
+	my $toggle = $_[3];
+	$toggle = ($toggle eq "on" ? "0" : "1");
+
+	my $sql = "INSERT INTO podcasts (podcast_name, podcast_feed, podcast_skip, podcast_last_downloaded) ";
+	$sql   .= "VALUES ('$name', '$url', '$toggle', '2000-01-01 00:00:00')";
+	$conn->query($sql);
+	return $conn->create_record_iterator;
+}
+
 sub get_podcast_list
 {
 	my $conn = $_[0];
