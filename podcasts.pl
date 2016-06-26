@@ -93,6 +93,7 @@ if ($add) {
 	} else {
 		print "--You must set a name and a url to add a podcast\n";
 	}
+	exit;
 }
 
 if ($toggle ne "" && $podcast ne "") {
