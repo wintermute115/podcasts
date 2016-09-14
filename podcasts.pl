@@ -15,6 +15,7 @@ use Term::ANSIColor;
 use Time::Local;
 use Try;
 use XML::RSS;
+use File::Basename;
 
 # MySQL functions
 require("/home/ross/scripts/podcasts/connect.pl");
@@ -44,6 +45,7 @@ my $url = "";
 my $toggle = "";
 my $podcast = "";
 my $caller = "user";
+my $move = "";
 my $result = GetOptions("list"      => \$list,
                         "date"      => \$date,
                         "add"       => \$add,
@@ -51,7 +53,8 @@ my $result = GetOptions("list"      => \$list,
                         "url=s"     => \$url,
                         "caller=s"  => \$caller,
                         "podcast=s" => \$podcast,
-                        "toggle=s"  => \$toggle);
+                        "toggle=s"  => \$toggle,
+                        "move=s"    => \$move);
 
 # MySQL object
 my $conn = mysql_connect();
@@ -81,6 +84,12 @@ if ($list || $date)
 		print "\n";
 		print color 'reset';
 	}
+	exit;
+}
+
+if ($move ne "") {
+	my $dir = dirname(__FILE__);
+	exec($dir . "/movepods.pl -m $move");
 	exit;
 }
 
