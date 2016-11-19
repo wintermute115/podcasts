@@ -102,7 +102,6 @@ sub get_podcast_rows
 	$order = ($order eq "date" ? "podcast_last_downloaded DESC" : "podcast_name ASC");
 	my $sql = "SELECT MAX(CHAR_LENGTH(podcast_id)) AS podcast_id, MAX(CHAR_LENGTH(podcast_name)) AS podcast_name, 1 AS podcast_skip, 18 AS podcast_last_downloaded, 1 AS sort FROM " . $DB::tablename;
 	$sql .= " UNION SELECT podcast_id, podcast_name, podcast_skip, podcast_last_downloaded, 2 FROM " . $DB::tablename . " order by sort ASC, " . $order;
-	print $sql . "\n";
 	$conn->query($sql);
 	return $conn->create_record_iterator;
 }
