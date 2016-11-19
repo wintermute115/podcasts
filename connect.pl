@@ -75,7 +75,7 @@ sub get_podcast_list
 	my $conn = $_[0];
 	my $podcast = $_[1];
 	# Set up the MySQL query
-	my $sql = "SELECT podcast_id, podcast_name, podcast_feed, podcast_last_downloaded FROM " . $DB::tablename;
+	my $sql = "SELECT podcast_id, podcast_name, podcast_feed, podcast_last_downloaded FROM " . $DB::tablename . " ";
 	if ($podcast eq "")
 	{
 		$sql .= "WHERE podcast_skip = '0' ORDER BY podcast_name ASC";
