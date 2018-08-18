@@ -41,6 +41,7 @@ binmode STDOUT, ":utf8";
 my $list;
 my $date;
 my $add;
+my $delete;
 my $name = "";
 my $url = "";
 my $toggle = "";
@@ -57,7 +58,8 @@ my $result = GetOptions("list"          => \$list,
                         "podcast=s"     => \$podcast,
                         "toggle=s"      => \$toggle,
                         "move=s"        => \$move,
-                        "just_playlist" => \$just_playlist);
+                        "just_playlist" => \$just_playlist,
+                        "x"             => \$delete);
 
 # MySQL object
 my $conn = mysql_connect();
@@ -87,6 +89,12 @@ if ($list || $date)
 		print "\n";
 		print color 'reset';
 	}
+	exit;
+}
+
+if ($delete) {
+	my $dir = dirname(__FILE__);
+	exec($dir . "/delete.pl");
 	exit;
 }
 
