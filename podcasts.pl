@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/perl
 
 #Automatically downloads podcasts to my computer so they
 #can be copied to my iPod.
@@ -13,8 +13,8 @@ use Net::MySQL;
 use Number::Format;
 use Term::ANSIColor;
 use Time::Local;
-use Try;
 use XML::RSS;
+use Try;
 use File::Basename;
 
 # MySQL functions
@@ -28,6 +28,7 @@ my $final_data;
 my $total_size;
 
 my $root = "/home/ross/Downloads/New Podcasts/";
+#my $root = "/home/ross/Dropbox/Podcasts/";
 
 my $basedir = $root . "Podcasts";
 my $playlistdir = $root . "Playlists";
@@ -46,15 +47,17 @@ my $toggle = "";
 my $podcast = "";
 my $caller = "user";
 my $move = "";
-my $result = GetOptions("list"      => \$list,
-                        "date"      => \$date,
-                        "add"       => \$add,
-                        "name=s"    => \$name,
-                        "url=s"     => \$url,
-                        "caller=s"  => \$caller,
-                        "podcast=s" => \$podcast,
-                        "toggle=s"  => \$toggle,
-                        "move=s"    => \$move);
+my $just_playlist;
+my $result = GetOptions("list"          => \$list,
+                        "date"          => \$date,
+                        "add"           => \$add,
+                        "name=s"        => \$name,
+                        "url=s"         => \$url,
+                        "caller=s"      => \$caller,
+                        "podcast=s"     => \$podcast,
+                        "toggle=s"      => \$toggle,
+                        "move=s"        => \$move,
+                        "just_playlist" => \$just_playlist);
 
 # MySQL object
 my $conn = mysql_connect();
@@ -257,12 +260,13 @@ while (my $row = $rs->each)
 		{
 			#Check each item in the feed
 			my $title = $item->{'title'};
+			$title =~ s/\n//g; #Strip out newlines
 			$title =~ s/\x{2013}/-/g; #Convert long hyphens to ASCII equivalent
 			my $pubdate = parse_date($item->{'pubDate'});
 			my $type = $item->{'enclosure'}->{'type'};
 			my $url = $item->{'enclosure'}->{'url'};
 			$url = (defined($url) ? $url : "");
-			$url =~ /.([^\/]*\.mp3)(?!.*mp3)/; #separate out the filename
+			$url =~ /.([^\/]*\.(mp3|m4a))(?!.*(mp3|m4a))/; #separate out the filename
 			my $fname = $1;
 			$new_last_download = ($pubdate > $new_last_download ? $pubdate : $new_last_download);
 			next if ($pubdate <= $last_download); #If we've cycled through all the newer ones, stop now.
@@ -270,35 +274,43 @@ while (my $row = $rs->each)
 			{
 				#Only download audiofiles
 				print color 'bold';
-				my $note = "Downloading \"$title\" [$fname]";
-				writelog($note);
-				print $note . (length($note) == 80 ? "" : "\n"); #Adding a newline after an 80-char line results in a blank line
-				my $final_data;
-				$curl->pushopt(CURLOPT_HTTPHEADER, ["User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:30.0) Gecko/20100101 Firefox/30.0"]);
-				$curl->setopt(CURLOPT_NOPROGRESS, 0);
-				$curl->setopt(CURLOPT_PROGRESSFUNCTION, \&progress);
-				$curl->setopt(CURLOPT_URL, $url);
-				$curl->setopt(CURLOPT_WRITEDATA, \$final_data);
-				$curl->perform();
-				my $size = length($final_data);
-				printf("%-75s\n", $formatter->format_bytes($size, unit => 'K'));
-				# write out the podcast to a file
 				mkdir($basedir) unless (-d($basedir));
 				mkdir("$basedir/$name") unless (-d("$basedir/$name"));
-				open(my $write_handle, ">", "$basedir/$name/$fname");
-				binmode($write_handle);
-				print $write_handle $final_data;
-				close($write_handle);
-				# Track the file for the playlist
+				if (!$just_playlist) {
+					$fname = get_savename ($basedir, $name, $fname);
+					# Write to the log
+					my $note = "Downloading \"$title\" [$fname]";
+					writelog($note);
+					print $note . (length($note) == 80 ? "" : "\n"); #Adding a newline after an 80-char line results in a blank line
+					my $final_data;
+					$curl->pushopt(CURLOPT_HTTPHEADER, ["User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:30.0) Gecko/20100101 Firefox/30.0"]);
+					$curl->setopt(CURLOPT_NOPROGRESS, 0);
+					$curl->setopt(CURLOPT_PROGRESSFUNCTION, \&progress);
+					$curl->setopt(CURLOPT_URL, $url);
+					$curl->setopt(CURLOPT_WRITEDATA, \$final_data);
+					$curl->perform();
+					my $size = length($final_data);
+					printf("%-75s\n", $formatter->format_bytes($size, unit => 'K'));
+					# write out the podcast to a file
+					open(my $write_handle, ">", "$basedir/$name/$fname");
+					binmode($write_handle);
+					print $write_handle $final_data;
+					close($write_handle);
+				} else {
+					# Write to the log
+					my $note = "Building playlist for \"$title\" [$fname]";
+					print $note . (length($note) == 80 ? "" : "\n"); #Adding a newline after an 80-char line results in a blank line
+				}
+				#Track the file for the playlist
 				$playlist{$pubdate . $title} = "/Podcasts/$name/$fname";
 				print color 'reset';
 			}
+
 		}
 		# Update the last downloaded time in the database
 		my ($new_sec, $new_min, $new_hr, $new_day, $new_mon, $new_year, $new_wday, $new_yday, $new_isdst) = localtime($new_last_download);
 		my $new_date = ($new_year + 1900) . "-" . sprintf("%0*d", 2, $new_mon + 1) . "-" . sprintf("%0*d", 2, $new_day) . " " . sprintf("%0*d", 2, $new_hr) . ":" . sprintf("%0*d", 2, $new_min) . ":" . sprintf("%0*d", 2, $new_sec);
 		write_to_database($conn, $id, $new_date);
-
 }
 my $count = keys(%playlist);
 print color 'bold';
@@ -347,6 +359,22 @@ sub parse_date
 	my $min = $5;
 	my $sec = $6;
 	return (timelocal($sec, $min, $hour, $day, $mon, $year));
+}
+
+sub get_savename {
+	my $basedir = $_[0];
+	my $name = $_[1];
+	my $fname = $_[2];
+	my $counter = 0;
+	my $base;
+	my $ext;
+	my $save_name;
+	do {
+		($base, $ext) = split(/\./, $fname);
+		$save_name = ($counter == 0 ? $fname : $base . "_" . $counter . "." . $ext);
+		$counter++;
+	} while (-e("$basedir/$name/$save_name"));
+	return $save_name;
 }
 
 sub progress
