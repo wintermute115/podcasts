@@ -8,6 +8,6 @@ our $tablename = "podcasts";
 
 our %creds = ('hostname' => 'localhost',
 			  'database' => 'podcasts',
-			  'user'     => 'podcasts',
-			  'password' => 'podpass');
+			  'user'     => 'root',
+			  'password' => 'root');
 
