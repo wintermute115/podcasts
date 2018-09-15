@@ -277,8 +277,11 @@ while (my $row = $rs->each)
 			$url = (defined($url) ? $url : "");
 			$url =~ /.([^\/]*\.(mp3|m4a))(?!.*(mp3|m4a))/; #separate out the filename
 			my $fname = uri_unescape($1);
-			$fname =~ /^.*\/(.*)$/;
-			$fname = $1;
+			if (index($fname, "/") != -1) {
+				#Strip out other URI parts
+				$fname =~ /^.*\/(.*)$/;
+				$fname = $1;
+			}
 			$new_last_download = ($pubdate > $new_last_download ? $pubdate : $new_last_download);
 			next if ($pubdate <= $last_download); #If we've cycled through all the newer ones, stop now.
 			if (defined($type) && $type =~ /^audio\//i)
