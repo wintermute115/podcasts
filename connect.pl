@@ -123,7 +123,7 @@ sub close_connection
 sub dump_database
 {
 	#Back up db to the cloud
-	system("mysqldump -uroot -uroot " . $DB::tablename . " > '/home/ross/SpiderOak Hive/sql/podcasts.sql'");
+	system("mysqldump -uroot -proot " . $DB::tablename . " > '/home/ross/SpiderOak Hive/sql/podcasts.sql'");
 }
 
 1;

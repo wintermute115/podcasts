@@ -16,6 +16,7 @@ use Time::Local;
 use XML::RSS;
 use Try;
 use File::Basename;
+use URI::Escape
 
 # MySQL functions
 require("/home/ross/scripts/podcasts/connect.pl");
@@ -275,7 +276,9 @@ while (my $row = $rs->each)
 			my $url = $item->{'enclosure'}->{'url'};
 			$url = (defined($url) ? $url : "");
 			$url =~ /.([^\/]*\.(mp3|m4a))(?!.*(mp3|m4a))/; #separate out the filename
-			my $fname = $1;
+			my $fname = uri_unescape($1);
+			$fname =~ /^.*\/(.*)$/;
+			$fname = $1;
 			$new_last_download = ($pubdate > $new_last_download ? $pubdate : $new_last_download);
 			next if ($pubdate <= $last_download); #If we've cycled through all the newer ones, stop now.
 			if (defined($type) && $type =~ /^audio\//i)
