@@ -39,7 +39,7 @@ my $archive = $root . "archive/";
 binmode STDOUT, ":utf8";
 
 # Commandline options
-my $list;
+my $list = "";
 my $date;
 my $add;
 my $delete;
@@ -50,8 +50,7 @@ my $podcast = "";
 my $caller = "user";
 my $move = "";
 my $just_playlist;
-my $result = GetOptions("list"          => \$list,
-                        "date"          => \$date,
+my $result = GetOptions("list=s"        => \$list,
                         "add"           => \$add,
                         "name=s"        => \$name,
                         "url=s"         => \$url,
@@ -65,10 +64,16 @@ my $result = GetOptions("list"          => \$list,
 # MySQL object
 my $conn = mysql_connect();
 
-if ($list || $date)
+if ($list ne "")
 {
 	#Provide a list of feeds in the database
-	my $order = ($date ? "date" : "name");
+	#List can be in order of [d]ate, [a]lphabet or [i]d
+	my $order = "name";
+	if ($list eq "d") {
+		$order = "date";
+	} elsif ($list eq "i") {
+		$order = "id";
+	}
 	my $rs = get_podcast_rows($conn, $order);
 	my $header_row = $rs->each;
 	my $id_len = $header_row->[0];

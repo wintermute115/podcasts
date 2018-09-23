@@ -4,6 +4,7 @@ use strict;
 
 use Try;
 use Net::MySQL;
+use Switch;
 
 require("/home/ross/scripts/podcasts/credentials.pl");
 
@@ -99,7 +100,17 @@ sub get_podcast_rows
 {
 	my $conn = $_[0];
 	my $order = $_[1];
-	$order = ($order eq "date" ? "podcast_last_downloaded DESC" : "podcast_name ASC");
+	switch ($order) {
+		case "date" {
+			$order = "podcast_last_downloaded DESC";
+		}
+		case "name" {
+			$order = "podcast_name ASC";
+		}
+		case "id" {
+			$order = "podcast_id ASC";
+		}
+	}
 	my $sql = "SELECT MAX(CHAR_LENGTH(podcast_id)) AS podcast_id, MAX(CHAR_LENGTH(podcast_name)) AS podcast_name, 1 AS podcast_skip, 18 AS podcast_last_downloaded, 1 AS sort FROM " . $DB::tablename;
 	$sql .= " UNION SELECT podcast_id, podcast_name, podcast_skip, podcast_last_downloaded, 2 FROM " . $DB::tablename . " order by sort ASC, " . $order;
 	$conn->query($sql);
