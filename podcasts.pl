@@ -40,7 +40,6 @@ binmode STDOUT, ":utf8";
 
 # Commandline options
 my $list = "";
-my $date;
 my $add;
 my $delete;
 my $name = "";
