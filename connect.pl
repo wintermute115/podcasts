@@ -30,7 +30,7 @@ sub toggle_podcast
 	my $podcast = $_[1];
 	my $toggle = $_[2];
 	my $where;
-	my $sql = "UPDATE podcasts set podcast_skip = ";
+	my $sql = "UPDATE " . $DB::tablename . " set podcast_skip = ";
 	if ($toggle eq "on")
 	{
 		$sql .= "'0' ";
@@ -50,7 +50,7 @@ sub toggle_podcast
 	$sql .= $where;
 	$conn->query($sql);
 	#Get details to return
-	$sql = "SELECT podcast_id, podcast_name, podcast_skip FROM podcasts " . $where;
+	$sql = "SELECT podcast_id, podcast_name, podcast_skip FROM " . $DB::tablename . " " . $where;
 	$conn->query($sql);
 	return $conn->create_record_iterator;
 }
@@ -65,7 +65,7 @@ sub add_podcast {
 	my $sql = "CREATE TABLE IF NOT EXISTS `" . $DB::tablename . "` (`podcast_id` SMALLINT(5) NOT NULL AUTO_INCREMENT, `podcast_name` VARCHAR(50) NOT NULL, `podcast_feed` VARCHAR(100) NOT NULL, `podcast_skip` ENUM('0','1') NOT NULL DEFAULT '0', `podcast_last_downloaded` DATETIME NOT NULL, PRIMARY KEY (`podcast_id`) ) ENGINE=InnoDB AUTO_INCREMENT=32 DEFAULT CHARSET=latin1;";
 	$conn->query($sql);
 
-	$sql = "INSERT INTO podcasts (podcast_name, podcast_feed, podcast_skip, podcast_last_downloaded) ";
+	$sql = "INSERT INTO " . $DB::tablename . " (podcast_name, podcast_feed, podcast_skip, podcast_last_downloaded) ";
 	$sql   .= "VALUES ('$name', '$url', '$toggle', '2000-01-01 00:00:00')";
 	$conn->query($sql);
 	return $conn->create_record_iterator;
