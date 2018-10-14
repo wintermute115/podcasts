@@ -7,6 +7,8 @@ use Net::MySQL;
 use Switch;
 
 require("/home/ross/scripts/podcasts/credentials.pl");
+# Logging functions
+require("/home/ross/scripts/podcasts/log.pl");
 
 my $conn;
 

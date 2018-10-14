@@ -115,6 +115,8 @@ if ($add) {
 		$toggle = ($toggle eq "off" ? "off" : "on");
 		my $rs = add_podcast($conn, $name, $url, $toggle);
 		print "Podcast $name [$url] has been added\n";
+		my $logmsg = "Podcast \"$name\" at $url has been added" . ($toggle eq "off" ? " (currently disabled)" : "");
+		writelog($logmsg);
 	} else {
 		print "--You must set a name and a url to add a podcast\n";
 	}
@@ -131,6 +133,7 @@ if ($toggle ne "" && $podcast ne "") {
 			my $skip = $row->[2];
 			print "Podcast '$name' is now ";
 			print ($skip eq '1' ? "off" : "on");
+			writelog("Podcast '$name' has been " . ($skip eq '1' ? "disabled" : "enabled"));
 			print "\n";
 	} else {
 		print "--toggle must be 'on' or 'off'\n";
