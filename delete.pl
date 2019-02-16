@@ -35,7 +35,8 @@ while (my $bookmark = <$bookmarks>) {
 				if (-e($iPod . $file)) {
 					$deleted++;
 					$size += -s($iPod . $file);
-					print "Deleting " . $iPod . $file . "\n";
+					# print "Deleting " . $iPod . $file . "\n";
+					print "Deleting " . $file . "\n";
 					unlink($iPod . $file);
 				}
 				$counter++;
