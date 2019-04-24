@@ -407,9 +407,15 @@ sub get_duration {
 	my $mp3 = MP3::Tag->new($file);
 	my $mins = $mp3->total_mins();
 	my $secs = $mp3->leftover_secs();
+	if (length($secs) == 1) {
+		$secs = "0" . $secs;
+	}
 	if ($mins > 59) {
 		my $hours = int($mins / 60);
-		$mins = $mins % 60;
+		$mins %= 60;
+		if (length($mins) == 1) {
+			$mins = "0" . $mins;
+		}
 		$duration = $hours . ":" . $mins . ":" . $secs;
 	} else {
 		$duration = $mins . ":" . $secs;
