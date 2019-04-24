@@ -16,7 +16,9 @@ use Time::Local;
 use XML::RSS;
 use Try;
 use File::Basename;
-use URI::Escape
+use URI::Escape;
+use MP3::Tag;
+use MP3::Info;
 
 # MySQL functions
 require("/home/ross/scripts/podcasts/connect.pl");
@@ -301,7 +303,6 @@ while (my $row = $rs->each)
 					$fname = get_savename ($basedir, $name, $fname);
 					# Write to the log
 					my $note = "Downloading \"$title\" [$fname]";
-					writelog($note);
 					print $note . (length($note) == 80 ? "" : "\n"); #Adding a newline after an 80-char line results in a blank line
 					my $final_data;
 					$curl->pushopt(CURLOPT_HTTPHEADER, ["User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:30.0) Gecko/20100101 Firefox/30.0"]);
@@ -317,6 +318,8 @@ while (my $row = $rs->each)
 					binmode($write_handle);
 					print $write_handle $final_data;
 					close($write_handle);
+					my $duration = get_duration("$basedir/$name/$fname");
+					writelog($note . " - [" . $duration . "]");
 				} else {
 					# Write to the log
 					my $note = "Building playlist for \"$title\" [$fname]";
@@ -396,6 +399,22 @@ sub get_savename {
 		$counter++;
 	} while (-e("$basedir/$name/$save_name"));
 	return $save_name;
+}
+
+sub get_duration {
+	my $file = $_[0];
+	my $duration = "";
+	my $mp3 = MP3::Tag->new($file);
+	my $mins = $mp3->total_mins();
+	my $secs = $mp3->leftover_secs();
+	if ($mins > 59) {
+		my $hours = int($mins / 60);
+		$mins = $mins % 60;
+		$duration = $hours . ":" . $mins . ":" . $secs;
+	} else {
+		$duration = $mins . ":" . $secs;
+	}
+	return $duration;
 }
 
 sub progress
