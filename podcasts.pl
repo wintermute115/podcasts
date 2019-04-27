@@ -19,6 +19,7 @@ use File::Basename;
 use URI::Escape;
 use MP3::Tag;
 use MP3::Info;
+use Data::Dumper;
 
 # MySQL functions
 require("/home/ross/scripts/podcasts/connect.pl");
@@ -280,6 +281,11 @@ while (my $row = $rs->each)
 			my $title = $item->{'title'};
 			$title =~ s/\n//g; #Strip out newlines
 			$title =~ s/\x{2013}/-/g; #Convert long hyphens to ASCII equivalent
+			my $summary = $item->{'http://www.itunes.com/dtds/podcast-1.0.dtd'}->{'subtitle'};
+			$summary =~ s/\s+$//;
+			if ($summary ne '') {
+				$summary = "\n" . (' ' x 23) . $summary;
+			}
 			my $pubdate = parse_date($item->{'pubDate'});
 			my $type = $item->{'enclosure'}->{'type'};
 			my $url = $item->{'enclosure'}->{'url'};
@@ -319,9 +325,9 @@ while (my $row = $rs->each)
 					print $write_handle $final_data;
 					close($write_handle);
 					my $duration = get_duration("$basedir/$name/$fname");
-					writelog($note . " - [" . $duration . "]");
-				} else {
 					# Write to the log
+					writelog($note . " - [" . $duration . "]" . $summary );
+				} else {
 					my $note = "Building playlist for \"$title\" [$fname]";
 					print $note . (length($note) == 80 ? "" : "\n"); #Adding a newline after an 80-char line results in a blank line
 				}
