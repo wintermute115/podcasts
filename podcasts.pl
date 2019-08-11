@@ -6,20 +6,21 @@
 #Runs as a cron job every hour.
 
 use strict;
+use Data::Dumper;
+use File::Basename;
 use Getopt::Long;
 use IO::Uncompress::Gunzip qw(gunzip);
+use MP3::Info;
+use MP3::Tag;
 use Net::Curl::Easy qw(:constants);
 use Net::MySQL;
 use Number::Format;
+use String::Util qw(trim);
 use Term::ANSIColor;
 use Time::Local;
-use XML::RSS;
 use Try;
-use File::Basename;
 use URI::Escape;
-use MP3::Tag;
-use MP3::Info;
-use Data::Dumper;
+use XML::RSS;
 
 # MySQL functions
 require("/home/ross/scripts/podcasts/connect.pl");
@@ -282,7 +283,9 @@ while (my $row = $rs->each)
 			$title =~ s/\n//g; #Strip out newlines
 			$title =~ s/\x{2013}/-/g; #Convert long hyphens to ASCII equivalent
 			my $summary = $item->{'http://www.itunes.com/dtds/podcast-1.0.dtd'}->{'subtitle'};
-			$summary =~ s/\s+$//;
+			$summary = trim($summary);
+			$summary =~ s/\n/ /g;
+			$summary =~ s/\s+$/ /g;
 			if ($summary ne '') {
 				$summary = "\n" . (' ' x 23) . $summary;
 			}
