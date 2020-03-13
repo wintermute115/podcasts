@@ -15,6 +15,14 @@ my $counter = 0;
 my $deleted = 0;
 my $size    = 0;
 my $human = Number::Bytes::Human->new(round_style => 'round', precision => 2);
+my $directory;
+my %per_podcast;
+my $key;
+my $val;
+my @keys;
+my $max_len = 0;
+my $len;
+my $padding;
 
 die ("A download is in progess; Please try again later.\n") if (-e($lockfile));
 die ("iPod not attached!\n") unless (-e($iPod));
@@ -38,6 +46,15 @@ while (my $bookmark = <$bookmarks>) {
 					# print "Deleting " . $iPod . $file . "\n";
 					print "Deleting " . $file . "\n";
 					unlink($iPod . $file);
+					$directory = (split(/\//, $file))[2];
+					if (exists($per_podcast{$directory})) {
+						$per_podcast{$directory} ++;
+					} else {
+						$per_podcast{$directory} = 1;
+					}
+					if (length($directory) > $max_len) {
+						$max_len = length($directory);
+					}
 				}
 				$counter++;
 				if ($counter == $location) {
@@ -48,3 +65,11 @@ while (my $bookmark = <$bookmarks>) {
 	}
 }
 print $deleted . ($deleted == 1 ? " file " : " files " ) . "with a total size of " . ($size == 0 ? "0 bytes" : $human->format($size)) . " have been deleted\n";
+
+#Show detailed breakdown
+@keys = sort(keys(%per_podcast));
+while (($key, $val) = each(@keys)) {
+	$len = length($val);
+	$padding = $max_len - $len;
+	print "$val: " . (" " x $padding) . $per_podcast{$val} . "\n";
+}
