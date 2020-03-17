@@ -24,7 +24,7 @@ my $max_len = 0;
 my $len;
 my $padding;
 
-die ("A download is in progess; Please try again later.\n") if (-e($lockfile));
+die ("A download is in progress; Please try again later.\n") if (-e($lockfile));
 die ("iPod not attached!\n") unless (-e($iPod));
 die ("No bookmark file found!") unless (-e($bookmarkfile));
 die ("No playlist file found!") unless (-e($iPod . $playlist));

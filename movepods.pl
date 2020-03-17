@@ -11,7 +11,7 @@ use List::MoreUtils qw(any);
 
 require("/home/ross/scripts/podcasts/log.pl");
 
-my $mode = "x"; 
+my $mode = "x";
 my @legal_modes = ("a", "i", "o");
 my $help = 0;
 my $result = GetOptions("mode=s" => \$mode, "help" => \$help);
@@ -39,7 +39,7 @@ my $lockfile = $computer . "/podcasts.lock";
 my $bookmark_regex = qr/^>\d+;(\d+);\d+;\d+;(\d+);(?:\d+;)*(.+\.m3u8);/;
 
 #Stop if we can't continue
-die ("A download is in progess; Please try again later.\n") if (-e($lockfile));
+die ("A download is in progress; Please try again later.\n") if (-e($lockfile));
 die ("No podcasts to copy!\n") unless (-e($computer . $podcast_folder));
 die ("iPod not attached!\n") unless (-e($iPod));
 die ("A valid mode has not been set. Can be [a]ppend, [i]nsert or [o]verwrite.\n") unless (any {$_ eq $mode} @legal_modes);
@@ -103,7 +103,7 @@ if ($mode eq "i")
     }
   }
   close($bookmarks);
-  if (!$found) 
+  if (!$found)
   {
   	writelog("Cannot read playist from bookmark file");
     die("Cannot read playist from bookmark file");
