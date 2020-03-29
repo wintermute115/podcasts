@@ -71,5 +71,5 @@ print $deleted . ($deleted == 1 ? " file " : " files " ) . "with a total size of
 while (($key, $val) = each(@keys)) {
 	$len = length($val);
 	$padding = $max_len - $len;
-	print "$val: " . (" " x $padding) . $per_podcast{$val} . "\n";
+	print "$val: " . (" " x $padding) . ("X" x $per_podcast{$val}) . "\n";
 }
