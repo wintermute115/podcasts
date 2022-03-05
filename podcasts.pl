@@ -17,7 +17,7 @@ use Net::MySQL;
 use Number::Format;
 use String::Util qw(trim);
 use Term::ANSIColor;
-use Time::Local;
+use Time::Local qw(timelocal_modern);
 use Try;
 use URI::Escape;
 use XML::RSS;
@@ -53,6 +53,7 @@ my $podcast = "";
 my $caller = "user";
 my $move = "";
 my $just_playlist;
+my $year_limit;
 my $result = GetOptions("list=s"        => \$list,
                         "add"           => \$add,
                         "name=s"        => \$name,
@@ -62,7 +63,8 @@ my $result = GetOptions("list=s"        => \$list,
                         "toggle=s"      => \$toggle,
                         "move=s"        => \$move,
                         "just_playlist" => \$just_playlist,
-                        "x"             => \$delete);
+                        "x"             => \$delete,
+                        "year_limit"    => \$year_limit);
 
 # MySQL object
 my $conn = mysql_connect();
@@ -200,7 +202,12 @@ while (my $row = $rs->each)
 		my ($date, $time) = split(/ /, $timestamp);
 		my ($year, $mon, $day) = split(/-/, $date);
 		my ($hour, $min, $sec) = split(/:/, $time);
-		my $last_download = timelocal($sec, $min, $hour, $day, $mon - 1, $year - 1900);
+		my $last_download = timelocal_modern($sec, $min, $hour, $day, $mon - 1, $year);
+		my $download_limit = timelocal_modern(localtime());
+		if ($year_limit)
+		{
+			my $download_limit = timelocal_modern($sec, $min, $hour, $day, $mon -1, $year + 1);
+		}
 		my $feed;
 		my $broken = 0;
 		mkdir($archive) unless (-d($archive));
@@ -276,8 +283,7 @@ while (my $row = $rs->each)
 			next FEED;
 		}
 		my $new_last_download = $last_download;
-		foreach my $item (@{$parser->{'items'}})
-		{
+		foreach my $item (@{$parser->{'items'}}) {
 			#Check each item in the feed
 			my $title = $item->{'title'};
 			$title =~ s/\n//g; #Strip out newlines
@@ -300,16 +306,18 @@ while (my $row = $rs->each)
 				$fname =~ /^.*\/(.*)$/;
 				$fname = $1;
 			}
-			$new_last_download = ($pubdate > $new_last_download ? $pubdate : $new_last_download);
+
 			next if ($pubdate <= $last_download); #If we've cycled through all the newer ones, stop now.
-			if (defined($type) && $type =~ /^audio\//i)
-			{
-				#Only download audiofiles
+
+			if (defined($type) && $type =~ /^audio\//i && (!$year_limit || $pubdate < $download_limit)) {
+				#Only download audiofiles that are before our defined end time (either now or a year after the last download)
+				$new_last_download = ($pubdate > $new_last_download ? $pubdate : $new_last_download);
 				print color 'bold';
 				mkdir($basedir) unless (-d($basedir));
 				mkdir("$basedir/$name") unless (-d("$basedir/$name"));
 				if (!$just_playlist) {
-					$fname = get_savename ($basedir, $name, $fname);
+					$fname = get_savename ($fname);
+					my $fullname = "$basedir/$name/$fname";
 					# Write to the log
 					my $note = "Downloading \"$title\" [$fname]";
 					print $note . (length($note) == 80 ? "" : "\n"); #Adding a newline after an 80-char line results in a blank line
@@ -323,11 +331,12 @@ while (my $row = $rs->each)
 					my $size = length($final_data);
 					printf("%-75s\n", $formatter->format_bytes($size, unit => 'K'));
 					# write out the podcast to a file
-					open(my $write_handle, ">", "$basedir/$name/$fname");
+					open(my $write_handle, ">", $fullname);
 					binmode($write_handle);
 					print $write_handle $final_data;
 					close($write_handle);
-					my $duration = get_duration("$basedir/$name/$fname");
+					check_title($fullname, $title);
+					my $duration = get_duration($fullname);
 					# Write to the log
 					writelog($note . " - [" . $duration . "]" . $summary );
 				} else {
@@ -384,29 +393,31 @@ sub parse_date
 	              "oct" => "09",
 	              "nov" => "10",
 	              "dec" => "11");
-	$datestr =~ /(\d{1,2}) ([[:alpha:]]{3}) (\d{4}) (\d{2}):(\d{2}):(\d{2})/;
+	$datestr =~ /(\d{1,2}) ([[:alpha:]]{3})[[:alpha:]]* (\d{4}) (\d{2}):(\d{2}):(\d{2})/;
 	my $day = $1;
 	my $mon = $months{lc($2)};
-	my $year = $3 - 1900;
+	my $year = $3;
 	my $hour = $4;
 	my $min = $5;
 	my $sec = $6;
-	return (timelocal($sec, $min, $hour, $day, $mon, $year));
+	return (timelocal_modern($sec, $min, $hour, $day, $mon, $year));
 }
 
 sub get_savename {
-	my $basedir = $_[0];
-	my $name = $_[1];
-	my $fname = $_[2];
-	my $counter = 0;
+	# Gives every file a (hopefully) unique four-character suffix to aviod collisions if multiple podcasts in a feed have the same filename
+	my $fname = $_[0];
 	my $base;
 	my $ext;
 	my $save_name;
-	do {
-		($base, $ext) = split(/\./, $fname);
-		$save_name = ($counter == 0 ? $fname : $base . "_" . $counter . "." . $ext);
-		$counter++;
-	} while (-e("$basedir/$name/$save_name"));
+
+	($base, $ext) = $fname =~ /(.*)\.(.*?)$/;
+	# ($base, $ext) = split(/\.([^\.]+)$/, $fname);
+
+	my @alphabet = ('0' ..'9', 'A' .. 'Z', 'a' .. 'z');
+	my $suffix = join '' => map($alphabet[rand(@alphabet)], 1 .. 4);
+
+	$save_name = $base . '-'. $suffix . '.' . $ext;
+
 	return $save_name;
 }
 
@@ -430,6 +441,20 @@ sub get_duration {
 		$duration = $mins . ":" . $secs;
 	}
 	return $duration;
+}
+
+sub check_title {
+	# Makes sure that each file has a title set in the ID3 tags
+	my $file = $_[0];
+	my $title = $_[1];
+
+	my $mp3 = MP3::Tag->new($file);
+	my $current_title = $mp3->select_id3v2_frame_by_descr("TIT2");
+	if($current_title eq "") {
+		$mp3->select_id3v2_frame_by_descr("TIT2", $title);
+		$mp3->config(write_v24 => 1);
+		$mp3->update_tags();
+	}
 }
 
 sub progress
