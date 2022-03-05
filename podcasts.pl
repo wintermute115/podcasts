@@ -455,6 +455,7 @@ sub check_title {
 		$mp3->config(write_v24 => 1);
 		$mp3->update_tags();
 	}
+	return 0;
 }
 
 sub progress
