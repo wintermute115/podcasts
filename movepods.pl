@@ -10,6 +10,7 @@ use File::Copy::Recursive qw(dirmove);
 use List::MoreUtils qw(any);
 
 require("/home/ross/scripts/podcasts/log.pl");
+require("/home/ross/scripts/podcasts/backup.pl");
 
 my $mode = "x";
 my @legal_modes = ("a", "i", "o");
@@ -31,12 +32,15 @@ if ($help)
 }
 
 my $iPod = "/media/ross/iPodClassic";
-my $computer = "/home/ross/Downloads/New Podcasts";
+my $computer = "/home/ross/Downloads/New_Podcasts";
 my $podcast_folder = "/Podcasts/";
-my $playlist = "/Playlists/Podcasts.m3u8";
-my $bookmarkfile = $iPod . "/.rockbox/most-recent.bmark";
+my $playlist_folder = "/Playlists/";
+my $playlist = $playlist_folder . "Podcasts.m3u8";
+my $bookmark_loc = ".rockbox/most-recent.bmark";
+my $bookmarkfile = $iPod . "/" . $bookmark_loc;
 my $lockfile = $computer . "/podcasts.lock";
 my $bookmark_regex = qr/^>\d+;(\d+);\d+;\d+;(\d+);(?:\d+;)*(.+\.m3u8);/;
+my $music_folder = $iPod . "/Music/";
 
 #Stop if we can't continue
 die ("A download is in progress; Please try again later.\n") if (-e($lockfile));
@@ -129,4 +133,18 @@ open (my $wiper, ">", $computer . $playlist);
 print $wiper "";
 close($wiper);
 print "Playlist written\n";
+
+#Backup the library
+print "Backing up music... ";
+copy_dir($iPod . $music_folder, "Music", 1);
+print "Done\n";
+
+print "Backing up podcasts... ";
+copy_dir($iPod . $podcast_folder, "Podcasts", 1);
+print "Done\n";
+
+print "Backing up playlists... ";
+copy_dir($iPod . $playlist_folder, "Playlists", 1);
+copy_file($bookmarkfile, $bookmark_loc);
+print "Done\n";
 

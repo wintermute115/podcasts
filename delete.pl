@@ -6,7 +6,7 @@ use Number::Bytes::Human;
 use strict;
 
 my $iPod = "/media/ross/iPodClassic";
-my $computer = "/home/ross/Downloads/New Podcasts";
+my $computer = "/home/ross/Downloads/New_Podcasts";
 my $playlist = "/Playlists/Podcasts.m3u8";
 my $bookmarkfile = $iPod . "/.rockbox/most-recent.bmark";
 my $bookmark_regex = qr/^>\d+;(\d+);\d+;\d+;(\d+);(?:\d+;)*(.+\.m3u8);/;

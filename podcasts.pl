@@ -26,13 +26,15 @@ use XML::RSS;
 require("/home/ross/scripts/podcasts/connect.pl");
 # Logging functions
 require("/home/ross/scripts/podcasts/log.pl");
+# Backup
+require("/home/ross/scripts/podcasts/backup.pl");
 
 my %playlist;
 my $updated_config = "";
 my $final_data;
 my $total_size;
 
-my $root = "/home/ross/Downloads/New Podcasts/";
+my $root = "/home/ross/Downloads/New_Podcasts/";
 #my $root = "/home/ross/Dropbox/Podcasts/";
 
 my $basedir = $root . "Podcasts";
@@ -375,6 +377,9 @@ if ($count)
 unlink($lockfile) or die ("Cannot delete lockfile: $!");
 
 close_connection($conn);
+
+#Copy new podcasts to the backup without deleting existing ones
+copy_dir($basedir, "Podcasts", 0);
 
 ## Helper functions start here
 
