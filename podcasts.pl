@@ -379,7 +379,7 @@ unlink($lockfile) or die ("Cannot delete lockfile: $!");
 close_connection($conn);
 
 #Copy new podcasts to the backup without deleting existing ones
-copy_dir($basedir, "Podcasts", 0);
+copy_dir($basedir . "/", "Podcasts", 0);
 
 ## Helper functions start here
 
