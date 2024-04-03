@@ -26,3 +26,6 @@ sub copy_file
 	cp($source, $dest);
 
 }
+
+
+copy_dir("/media/ross/iPodClassic/Music/", "Music", 1);

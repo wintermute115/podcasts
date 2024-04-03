@@ -136,7 +136,7 @@ print "Playlist written\n";
 
 #Backup the library
 print "Backing up music... ";
-copy_dir($iPod . $music_folder, "Music", 1);
+copy_dir($music_folder, "Music", 1);
 print "Done\n";
 
 print "Backing up podcasts... ";
