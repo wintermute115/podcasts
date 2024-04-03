@@ -20,7 +20,7 @@ use Term::ANSIColor;
 use Time::Local qw(timelocal_modern);
 use Try;
 use URI::Escape;
-use XML::RSS;
+use XML::RSS::Parser;
 
 # MySQL functions
 require("/home/ross/scripts/podcasts/connect.pl");
@@ -243,8 +243,12 @@ while (my $row = $rs->each)
 			close ($archive_handle);
 			next FEED;
 		}
+		else
+		{
+			print "\n";
+		}
 
-		my $parser = XML::RSS->new();
+		my $parser = XML::RSS::Parser->new();
 		if (substr($feed, 0, 3) eq chr(0x1f) . chr(0x8b) . chr(0x08)) # magic number for GZip files
 		{
 			my $unzipped_feed;
@@ -270,36 +274,36 @@ while (my $row = $rs->each)
 			print " -- Unreadable\n";
 			next FEED;
  		}
-		print "\n";
-		try
-		{
-			$parser->parse($feed);
-		}
-		catch
-		{
-			#Go on the the next if this one is unreadable
-			$broken = 1; #putting next in here complains that it's exiting a subroutine
-		}
-		if ($broken) {
-			print "\n";
+
+		my $rss = $parser->parse_string($feed);
+		if(!$rss) {
+			print " -- Feed is broken -- \n";
 			next FEED;
 		}
+
 		my $new_last_download = $last_download;
-		foreach my $item (@{$parser->{'items'}}) {
+		foreach my $i ($rss->query('//item')) {
 			#Check each item in the feed
-			my $title = $item->{'title'};
+			my $title = $i->query('title')->text_content;
 			$title =~ s/\n//g; #Strip out newlines
 			$title =~ s/\x{2013}/-/g; #Convert long hyphens to ASCII equivalent
-			my $summary = $item->{'http://www.itunes.com/dtds/podcast-1.0.dtd'}->{'subtitle'};
+			my $summary = $i->query('description')->text_content;
 			$summary = trim($summary);
 			$summary =~ s/\n/ /g;
 			$summary =~ s/\s+$/ /g;
 			if ($summary ne '') {
 				$summary = "\n" . (' ' x 23) . $summary;
 			}
-			my $pubdate = parse_date($item->{'pubDate'});
-			my $type = $item->{'enclosure'}->{'type'};
-			my $url = $item->{'enclosure'}->{'url'};
+			my $pubdate = parse_date($i->query('pubDate')->text_content);
+			my $enc = $i->query('enclosure');
+			if (!defined($enc))
+			{
+				print " -- No enclosure -- \n";
+				next;
+			}
+			$enc = $enc->attributes();
+			my $type = ${$enc}{'{}type'};
+			my $url = ${$enc}{'{}url'};
 			$url = (defined($url) ? $url : "");
 			$url =~ /.([^\/]*\.(mp3|m4a))(?!.*(mp3|m4a))/; #separate out the filename
 			my $fname = uri_unescape($1);

@@ -147,4 +147,3 @@ print "Backing up playlists... ";
 copy_dir($iPod . $playlist_folder, "Playlists", 1);
 copy_file($bookmarkfile, $bookmark_loc);
 print "Done\n";
-
