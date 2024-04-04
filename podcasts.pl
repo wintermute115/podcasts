@@ -9,6 +9,7 @@ use strict;
 use Data::Dumper;
 use File::Basename;
 use Getopt::Long;
+use HTML::Entities;
 use HTML::Restrict;
 use IO::Uncompress::Gunzip qw(gunzip);
 use MP3::Info;
@@ -289,7 +290,7 @@ while (my $row = $rs->each)
 			my $title = $i->query('title')->text_content;
 			$title =~ s/\n//g; #Strip out newlines
 			$title =~ s/\x{2013}/-/g; #Convert long hyphens to ASCII equivalent
-			my $summary = $hr->process($i->query('description')->text_content);
+			my $summary = $hr->process(decode_entities($i->query('description')->text_content));
 			$summary = trim($summary);
 			$summary =~ s/\n/ /g;
 			$summary =~ s/\s+$/ /g;
