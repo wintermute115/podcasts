@@ -9,6 +9,7 @@ use strict;
 use Data::Dumper;
 use File::Basename;
 use Getopt::Long;
+use HTML::Restrict;
 use IO::Uncompress::Gunzip qw(gunzip);
 use MP3::Info;
 use MP3::Tag;
@@ -70,6 +71,7 @@ my $result = GetOptions("list=s"        => \$list,
 
 # MySQL object
 my $conn = mysql_connect();
+my $hr = HTML::Restrict->new();
 
 if ($list ne "")
 {
@@ -287,7 +289,7 @@ while (my $row = $rs->each)
 			my $title = $i->query('title')->text_content;
 			$title =~ s/\n//g; #Strip out newlines
 			$title =~ s/\x{2013}/-/g; #Convert long hyphens to ASCII equivalent
-			my $summary = $i->query('description')->text_content;
+			my $summary = $hr->process($i->query('description')->text_content);
 			$summary = trim($summary);
 			$summary =~ s/\n/ /g;
 			$summary =~ s/\s+$/ /g;
@@ -298,7 +300,6 @@ while (my $row = $rs->each)
 			my $enc = $i->query('enclosure');
 			if (!defined($enc))
 			{
-				print " -- No enclosure -- \n";
 				next;
 			}
 			$enc = $enc->attributes();
@@ -313,7 +314,13 @@ while (my $row = $rs->each)
 				$fname = $1;
 			}
 
-			next if ($pubdate <= $last_download); #If we've cycled through all the newer ones, stop now.
+			if ($pubdate <= $last_download) { #If we've cycled through all the newer ones, stop now.
+				# Update the last downloaded time in the database
+				my ($new_sec, $new_min, $new_hr, $new_day, $new_mon, $new_year, $new_wday, $new_yday, $new_isdst) = localtime($new_last_download);
+				my $new_date = ($new_year + 1900) . "-" . sprintf("%0*d", 2, $new_mon + 1) . "-" . sprintf("%0*d", 2, $new_day) . " " . sprintf("%0*d", 2, $new_hr) . ":" . sprintf("%0*d", 2, $new_min) . ":" . sprintf("%0*d", 2, $new_sec);
+				write_to_database($conn, $id, $new_date);
+				next FEED if ($pubdate <= $last_download); #If we've cycled through all the newer ones, stop now.
+			}
 
 			if (defined($type) && $type =~ /^audio\//i && (!$year_limit || $pubdate < $download_limit)) {
 				#Only download audiofiles that are before our defined end time (either now or a year after the last download)
