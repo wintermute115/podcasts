@@ -476,7 +476,7 @@ sub get_summary {
 	my $summary = "";
 	for my $option (@options) {
 		my $content = $elem->query($option);
-		if (defined($content)) {
+		if (defined($content) && $content->text_content ne "") {
 			$summary = $content->text_content;
 			last;
 		}
