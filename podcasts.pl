@@ -72,7 +72,6 @@ my $result = GetOptions("list=s"        => \$list,
 
 # MySQL object
 my $conn = mysql_connect();
-my $hr = HTML::Restrict->new();
 
 if ($list ne "")
 {
@@ -252,6 +251,7 @@ while (my $row = $rs->each)
 		}
 
 		my $parser = XML::RSS::Parser->new();
+		$parser->register_ns_prefix('lc_itunes', 'http://www.itunes.com/dtds/podcast-1.0.dtd');
 		if (substr($feed, 0, 3) eq chr(0x1f) . chr(0x8b) . chr(0x08)) # magic number for GZip files
 		{
 			my $unzipped_feed;
@@ -290,13 +290,7 @@ while (my $row = $rs->each)
 			my $title = $i->query('title')->text_content;
 			$title =~ s/\n//g; #Strip out newlines
 			$title =~ s/\x{2013}/-/g; #Convert long hyphens to ASCII equivalent
-			my $summary = $hr->process(decode_entities($i->query('description')->text_content));
-			$summary = trim($summary);
-			$summary =~ s/\n/ /g;
-			$summary =~ s/\s+$/ /g;
-			if ($summary ne '') {
-				$summary = "\n" . (' ' x 23) . $summary;
-			}
+			my $summary = get_summary($i);
 			my $pubdate = parse_date($i->query('pubDate')->text_content);
 			my $enc = $i->query('enclosure');
 			if (!defined($enc))
@@ -473,6 +467,29 @@ sub check_title {
 		$mp3->update_tags();
 	}
 	return 0;
+}
+
+sub get_summary {
+	my $elem = $_[0];
+	my $hr = HTML::Restrict->new();
+	my @options = ('itunes:summary', 'lc_itunes:summary', 'itunes:subtitle', 'lc_itunes:subtitle', 'description');
+	my $summary = "";
+	for my $option (@options) {
+		my $content = $elem->query($option);
+		if (defined($content)) {
+			$summary = $content->text_content;
+			last;
+		}
+	}
+
+	$summary = $hr->process(decode_entities($summary));
+	$summary = trim($summary);
+	$summary =~ s/\n/ /g;
+	$summary =~ s/\s+$/ /g;
+	if ($summary ne '') {
+		$summary = "\n" . (' ' x 23) . $summary;
+	}
+	return $summary;
 }
 
 sub progress
