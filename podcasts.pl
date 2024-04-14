@@ -11,6 +11,7 @@ use File::Basename;
 use Getopt::Long;
 use HTML::Entities;
 use HTML::Restrict;
+use Imager;
 use IO::Uncompress::Gunzip qw(gunzip);
 use MP3::Info;
 use MP3::Tag;
@@ -343,7 +344,9 @@ while (my $row = $rs->each)
 					binmode($write_handle);
 					print $write_handle $final_data;
 					close($write_handle);
+					# Deal with tags;
 					check_title($fullname, $title);
+					fix_art($fullname);
 					my $duration = get_duration($fullname);
 					# Write to the log
 					writelog($note . " - [" . $duration . "]" . $summary );
@@ -465,6 +468,32 @@ sub check_title {
 		$mp3->select_id3v2_frame_by_descr("TIT2", $title);
 		$mp3->config(write_v24 => 1);
 		$mp3->update_tags();
+	}
+	return 0;
+}
+
+sub fix_art {
+	# Make sure that any album art embedded in the file is properly formatted for RockBox
+	my $file = $_[0];
+	my $mp3 = MP3::Tag->new($file);
+	my @tags = $mp3->get_id3v2_frame_ids();
+	if ($mp3->have_id3v2_frame_by_descr("APIC")) {
+		my $raw_img = $mp3->select_id3v2_frame_by_descr("APIC");
+		if (open(my $fh_raw, "<:raw", \$raw_img)) {
+			my $converter = Imager->new();
+			$converter->read(fh=>$fh_raw);
+			$converter = $converter->scale(xpixels=>500, ypixels=>500, type=>'min');
+			my $final_img;
+			# Write to a stream that can be written into the ID# tag
+	        open(my $fh_final, ">:raw", \$final_img);
+	        $converter->write(fh=>$fh_final, type=>"jpeg", jpeg_progressive=>0);
+	        close($fh_final);
+	        $mp3->config(id3v23_unsync=>0);
+	        $mp3->select_id3v2_frame_by_descr("APIC", $final_img);
+	        $mp3->config(write_v24 => 1);
+	        $mp3->update_tags();
+		}
+		close($fh_raw)
 	}
 	return 0;
 }
