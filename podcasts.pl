@@ -476,7 +476,6 @@ sub fix_art {
 	# Make sure that any album art embedded in the file is properly formatted for RockBox
 	my $file = $_[0];
 	my $mp3 = MP3::Tag->new($file);
-	my @tags = $mp3->get_id3v2_frame_ids();
 	if ($mp3->have_id3v2_frame_by_descr("APIC")) {
 		my $raw_img = $mp3->select_id3v2_frame_by_descr("APIC");
 		if (open(my $fh_raw, "<:raw", \$raw_img)) {
