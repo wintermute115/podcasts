@@ -1,12 +1,12 @@
 #!/usr/bin/perl -w
 
 use strict;
+use File::Basename;
 use File::Copy qw(mv);
 
-my $year = (localtime)[5] + 1900;
+chdir(dirname(__FILE__));
+require("./locations.pl");
 
-my $logfile = "/home/ross/scripts/podcasts/logs/podcasts_" . $year . ".log";
-my $tempfile = "/home/ross/scripts/podcasts/logs/podcasts_temp.log";
 my $loghandle;
 
 sub writelog
@@ -14,7 +14,7 @@ sub writelog
 	my $string = $_[0];
 	my $break = (defined($_[1]) ? $_[1] : 0);
 	chomp($string);
-	open ($loghandle, ">>", $logfile);
+	open ($loghandle, ">>", $FileNames::logfile);
 	print $loghandle gettime() . " -- " . $string . "\n";
 	print $loghandle "-" x 19 . "\n" if ($break == 1);
 	close($loghandle);
@@ -35,9 +35,9 @@ sub gettime
 
 sub redirect
 {
-	mv ($logfile, $tempfile);
+	mv ($FileNames::logfile, $FileNames::templogfile);
 	sleep (1);
-	mv ($tempfile, $logfile);
+	mv ($FileNames::templogfile, $FileNames::logfile);
 }
 
 1;

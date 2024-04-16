@@ -3,9 +3,12 @@
 use strict;
 
 use Try;
+use File::Basename;
 use Net::MySQL;
 use Switch;
 
+chdir(dirname(__FILE__));
+require("./locations.pl");
 require("/home/ross/scripts/podcasts/credentials.pl");
 # Logging functions
 require("/home/ross/scripts/podcasts/log.pl");
@@ -136,7 +139,7 @@ sub close_connection
 sub dump_database
 {
 	#Back up db to the cloud
-	system("mysqldump -uroot -proot " . $DB::tablename . " > '/home/ross/pCloudDrive/podcasts.sql'");
+	system("mysqldump -uroot -proot " . $DB::tablename . " > '" . $FileNames::db_backup . "'");
 }
 
 1;

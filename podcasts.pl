@@ -25,25 +25,21 @@ use Try;
 use URI::Escape;
 use XML::RSS::Parser;
 
+chdir(dirname(__FILE__));
+
+# File locations
+require("./locations.pl");
 # MySQL functions
-require("/home/ross/scripts/podcasts/connect.pl");
+require("./connect.pl");
 # Logging functions
-require("/home/ross/scripts/podcasts/log.pl");
+require("./log.pl");
 # Backup
-require("/home/ross/scripts/podcasts/backup.pl");
+require("./backup.pl");
 
 my %playlist;
 my $updated_config = "";
 my $final_data;
 my $total_size;
-
-my $root = "/home/ross/Downloads/New_Podcasts/";
-#my $root = "/home/ross/Dropbox/Podcasts/";
-
-my $basedir = $root . "Podcasts";
-my $playlistdir = $root . "Playlists";
-my $lockfile = $root . "podcasts.lock";
-my $archive = $root . "archive/";
 
 binmode STDOUT, ":utf8";
 
@@ -109,14 +105,12 @@ if ($list ne "")
 }
 
 if ($delete) {
-	my $dir = dirname(__FILE__);
-	exec($dir . "/delete.pl");
+	exec("./delete.pl");
 	exit;
 }
 
 if ($move ne "") {
-	my $dir = dirname(__FILE__);
-	exec($dir . "/movepods.pl -m $move");
+	exec("./movepods.pl -m $move");
 	exit;
 }
 
@@ -152,21 +146,21 @@ if ($toggle ne "" && $podcast ne "") {
 	exit;
 }
 
-if (-e($lockfile)) {
-	my $lockfile_created = (stat($lockfile))[9];
+if (-e($FileNames::lockfile)) {
+	my $lockfile_created = (stat($FileNames::lockfile))[9];
 	if ($caller eq "boot" || time() - $lockfile_created > 7200) {
 		#Didn't clean up the lockfile on shutdown
-		unlink($lockfile);
+		unlink($FileNames::lockfile);
 	}
 }
 
 # cURL object
 my $curl = Net::Curl::Easy->new;
-
+my $ua_string = "User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:30.0) Gecko/20100101 Firefox/30.0";
 #Check that we can connect to the network
 try
 {
-	$curl->pushopt(CURLOPT_HTTPHEADER, ["User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:30.0) Gecko/20100101 Firefox/30.0"]);
+	$curl->pushopt(CURLOPT_HTTPHEADER, [$ua_string]);
 	$curl->setopt(CURLOPT_PROGRESSFUNCTION, \&no_progress);
 	$curl->setopt(CURLOPT_NOPROGRESS, 0);
 	$curl->setopt(CURLOPT_FOLLOWLOCATION, 1);
@@ -182,8 +176,8 @@ catch
 
 
 # Make sure we're not already downloading podcasts
-die("Another download is currently in progress; Please try again later\n") if (-e($lockfile));
-open(my $lockhandle, ">", $lockfile) or die ("Cannot create lockfile: $!");
+die("Another download is currently in progress; Please try again later\n") if (-e($FileNames::lockfile));
+open(my $lockhandle, ">", $FileNames::lockfile) or die ("Cannot create lockfile: $!");
 close($lockhandle);
 
 my $rs = get_podcast_list($conn, $podcast);
@@ -215,12 +209,12 @@ while (my $row = $rs->each)
 		}
 		my $feed;
 		my $broken = 0;
-		mkdir($archive) unless (-d($archive));
-		my $filename = $archive . $name . ".rss";
+		mkdir($FileNames::archive) unless (-d($FileNames::archive));
+		my $filename = $FileNames::archive . $name . ".rss";
 		# set up cURL options
 		try
 		{
-			$curl->pushopt(CURLOPT_HTTPHEADER, ["User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:30.0) Gecko/20100101 Firefox/30.0"]);
+			$curl->pushopt(CURLOPT_HTTPHEADER, [$ua_string]);
 			$curl->setopt(CURLOPT_PROGRESSFUNCTION, \&no_progress);
 			$curl->setopt(CURLOPT_NOPROGRESS, 0);
 			$curl->setopt(CURLOPT_FOLLOWLOCATION, 1);
@@ -322,16 +316,16 @@ while (my $row = $rs->each)
 				#Only download audiofiles that are before our defined end time (either now or a year after the last download)
 				$new_last_download = ($pubdate > $new_last_download ? $pubdate : $new_last_download);
 				print color 'bold';
-				mkdir($basedir) unless (-d($basedir));
-				mkdir("$basedir/$name") unless (-d("$basedir/$name"));
+				mkdir($FileNames::basedir) unless (-d($FileNames::basedir));
+				mkdir($FileNames::basedir . "/" .$name) unless (-d($FileNames::basedir . "/" .$name));
 				if (!$just_playlist) {
 					$fname = get_savename ($fname);
-					my $fullname = "$basedir/$name/$fname";
+					my $fullname = $FileNames::basedir . "/" . $name . "/" . $fname;
 					# Write to the log
 					my $note = "Downloading \"$title\" [$fname]";
 					print $note . (length($note) == 80 ? "" : "\n"); #Adding a newline after an 80-char line results in a blank line
 					my $final_data;
-					$curl->pushopt(CURLOPT_HTTPHEADER, ["User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:30.0) Gecko/20100101 Firefox/30.0"]);
+					$curl->pushopt(CURLOPT_HTTPHEADER, [$ua_string]);
 					$curl->setopt(CURLOPT_NOPROGRESS, 0);
 					$curl->setopt(CURLOPT_PROGRESSFUNCTION, \&progress);
 					$curl->setopt(CURLOPT_URL, $url);
@@ -355,7 +349,7 @@ while (my $row = $rs->each)
 					print $note . (length($note) == 80 ? "" : "\n"); #Adding a newline after an 80-char line results in a blank line
 				}
 				#Track the file for the playlist
-				$playlist{$pubdate . $title} = "/Podcasts/$name/$fname";
+				$playlist{$pubdate . $title} = "/" . $FileNames::podcastdir . "/$name/$fname";
 				print color 'reset';
 			}
 
@@ -373,8 +367,8 @@ if ($count)
 {
 	#Write out the playlist
 	print "Writing Playlist\n";
-	mkdir($playlistdir) unless (-d($playlistdir));
-	open(my $playlist_handle, ">>", "$playlistdir/Podcasts.m3u8");
+	mkdir($FileNames::playlistdir) unless (-d($FileNames::playlistdir));
+	open(my $playlist_handle, ">>", $FileNames::playlist);
 	my @keys = sort({$a cmp $b} keys(%playlist)); #Sorted by date
 	foreach my $key (@keys)
 	{
@@ -383,12 +377,12 @@ if ($count)
 	close($playlist_handle);
 	dump_database();
 }
-unlink($lockfile) or die ("Cannot delete lockfile: $!");
+unlink($FileNames::lockfile) or die ("Cannot delete lockfile: $!");
 
 close_connection($conn);
 
 #Copy new podcasts to the backup without deleting existing ones
-copy_dir($basedir . "/", "Podcasts", 0);
+copy_dir($FileNames::basedir . "/", $FileNames::podcastdir, 0);
 
 ## Helper functions start here
 
@@ -418,7 +412,7 @@ sub parse_date
 }
 
 sub get_savename {
-	# Gives every file a (hopefully) unique four-character suffix to aviod collisions if multiple podcasts in a feed have the same filename
+	# Gives every file a (hopefully) unique four-character suffix to avoid collisions if multiple podcasts in a feed have the same filename
 	my $fname = $_[0];
 	my $base;
 	my $ext;
@@ -481,16 +475,18 @@ sub fix_art {
 		if (open(my $fh_raw, "<:raw", \$raw_img)) {
 			my $converter = Imager->new();
 			$converter->read(fh=>$fh_raw);
-			$converter = $converter->scale(xpixels=>500, ypixels=>500, type=>'min');
-			my $final_img;
-			# Write to a stream that can be written into the ID# tag
-	        open(my $fh_final, ">:raw", \$final_img);
-	        $converter->write(fh=>$fh_final, type=>"jpeg", jpeg_progressive=>0);
-	        close($fh_final);
-	        $mp3->config(id3v23_unsync=>0);
-	        $mp3->select_id3v2_frame_by_descr("APIC", $final_img);
-	        $mp3->config(write_v24 => 1);
-	        $mp3->update_tags();
+				if (defined($converter::IMG)){ # Skip this if there's an issue
+				$converter = $converter->scale(xpixels=>500, ypixels=>500, type=>'min');
+				my $final_img;
+				# Write to a stream that can be written into the ID# tag
+		        open(my $fh_final, ">:raw", \$final_img);
+		        $converter->write(fh=>$fh_final, type=>"jpeg", jpeg_progressive=>0);
+		        close($fh_final);
+		        $mp3->config(id3v23_unsync=>0);
+		        $mp3->select_id3v2_frame_by_descr("APIC", $final_img);
+		        $mp3->config(write_v24 => 1);
+		        $mp3->update_tags();
+		    }
 		}
 		close($fh_raw)
 	}
@@ -500,7 +496,7 @@ sub fix_art {
 sub get_summary {
 	my $elem = $_[0];
 	my $hr = HTML::Restrict->new();
-	my @options = ('itunes:summary', 'lc_itunes:summary', 'itunes:subtitle', 'lc_itunes:subtitle', 'description');
+	my @options = ('itunes:subtitle', 'lc_itunes:subtitle', 'itunes:summary', 'lc_itunes:summary', 'description');
 	my $summary = "";
 	for my $option (@options) {
 		my $content = $elem->query($option);

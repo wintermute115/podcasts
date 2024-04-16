@@ -2,15 +2,15 @@
 
 # Deletes podcasts that have already been listened to
 
-use Number::Bytes::Human;
 use strict;
+use File::Basename;
+use Number::Bytes::Human;
 
-my $iPod = "/media/ross/iPodClassic";
-my $computer = "/home/ross/Downloads/New_Podcasts";
+chdir(dirname(__FILE__));
+require("./locations.pl");
+
 my $playlist = "/Playlists/Podcasts.m3u8";
-my $bookmarkfile = $iPod . "/.rockbox/most-recent.bmark";
 my $bookmark_regex = qr/^>\d+;(\d+);\d+;\d+;(\d+);(?:\d+;)*(.+\.m3u8);/;
-my $lockfile = $computer . "/podcasts.lock";
 my $counter = 0;
 my $deleted = 0;
 my $size    = 0;
@@ -24,27 +24,27 @@ my $max_len = 0;
 my $len;
 my $padding;
 
-die ("A download is in progress; Please try again later.\n") if (-e($lockfile));
-die ("iPod not attached!\n") unless (-e($iPod));
-die ("No bookmark file found!") unless (-e($bookmarkfile));
-die ("No playlist file found!") unless (-e($iPod . $playlist));
+die ("A download is in progress; Please try again later.\n") if (-e($FileNames::lockfile));
+die ("iPod not attached!\n") unless (-e($FileNames::ipodroot));
+die ("No bookmark file found!") unless (-e($FileNames::ipodplaylist));
+die ("No playlist file found!") unless (-e($FileNames::ipodroot . $playlist));
 
-open(my $bookmarks, "<", $bookmarkfile);
+open(my $bookmarks, "<", $FileNames::ipodplaylist);
 while (my $bookmark = <$bookmarks>) {
 	if ($bookmark =~ $bookmark_regex) {
 		my $location = $1;
 		my $found_playlist = $3;
 		my $re = qr/$playlist$/;
 		if ($found_playlist =~ $re) {
-			open(my $filelist, "<", $iPod . $playlist);
+			open(my $filelist, "<", $FileNames::ipodroot . $playlist);
 			FILES:
 			while (my $file = <$filelist>) {
 				chomp($file);
-				if (-e($iPod . $file)) {
+				if (-e($FileNames::ipodroot . $file)) {
 					$deleted++;
-					$size += -s($iPod . $file);
+					$size += -s($FileNames::ipodroot . $file);
 					print "Deleting " . $file . "\n";
-					unlink($iPod . $file);
+					unlink($FileNames::ipodroot . $file);
 					$directory = (split(/\//, $file))[2];
 					if (exists($per_podcast{$directory})) {
 						$per_podcast{$directory} ++;

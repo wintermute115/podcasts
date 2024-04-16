@@ -4,13 +4,16 @@
 #and puts them in the right place in the playlist.
 
 use strict;
-use Getopt::Long;
+use File::Basename;
 use File::Copy qw(cp);
 use File::Copy::Recursive qw(dirmove);
+use Getopt::Long;
 use List::MoreUtils qw(any);
 
-require("/home/ross/scripts/podcasts/log.pl");
-require("/home/ross/scripts/podcasts/backup.pl");
+chdir(dirname(__FILE__));
+require("./locations.pl");
+require("./log.pl");
+require("./backup.pl");
 
 my $mode = "x";
 my @legal_modes = ("a", "i", "o");
@@ -31,25 +34,16 @@ if ($help)
 	exit();
 }
 
-my $iPod = "/media/ross/iPodClassic";
-my $computer = "/home/ross/Downloads/New_Podcasts";
-my $podcast_folder = "/Podcasts/";
-my $playlist_folder = "/Playlists/";
-my $playlist = $playlist_folder . "Podcasts.m3u8";
-my $bookmark_loc = ".rockbox/most-recent.bmark";
-my $bookmarkfile = $iPod . "/" . $bookmark_loc;
-my $lockfile = $computer . "/podcasts.lock";
 my $bookmark_regex = qr/^>\d+;(\d+);\d+;\d+;(\d+);(?:\d+;)*(.+\.m3u8);/;
-my $music_folder = $iPod . "/Music/";
 
 #Stop if we can't continue
-die ("A download is in progress; Please try again later.\n") if (-e($lockfile));
-die ("No podcasts to copy!\n") unless (-e($computer . $podcast_folder));
-die ("iPod not attached!\n") unless (-e($iPod));
+die ("A download is in progress; Please try again later.\n") if (-e($FileNames::lockfile));
+die ("No podcasts to copy!\n") unless (-e($FileNames::basedir));
+die ("iPod not attached!\n") unless (-e($FileNames::ipodroot));
 die ("A valid mode has not been set. Can be [a]ppend, [i]nsert or [o]verwrite.\n") unless (any {$_ eq $mode} @legal_modes);
 
 #Copy the files over
-my ($count_files, $count_dirs, $depth) = dirmove($computer . $podcast_folder, $iPod . $podcast_folder);
+my ($count_files, $count_dirs, $depth) = dirmove($FileNames::basedir, $FileNames::ipodpodcasts);
 $count_files -= $count_dirs;
 $count_dirs -= 1;
 my $output = "$count_files episode" . ($count_files == 1 ? "" : "s") . " of $count_dirs podcast" . ($count_dirs == 1 ? "" : "s") . " copied over.\n";
@@ -63,7 +57,7 @@ if ($mode eq "i")
 {
   #Find out where we've gotten to so far, and insert at that point.
   my $found = 0;
-  open(my $bookmarks, "<", $bookmarkfile) or die ("Cannot find bookmark file - $!");
+  open(my $bookmarks, "<", $FileNames::ipodbookmark) or die ("Cannot find bookmark file - $!");
   while (my $bookmark = <$bookmarks>)
   {
     if ($bookmark =~ $bookmark_regex)
@@ -71,12 +65,13 @@ if ($mode eq "i")
       my $location = $1;
       my $time = $2;
       my $found_playlist = $3;
+      my $playlist = $FileNames::playlistdirname . "/" . $FileNames::playlistfile;
       my $re = qr/$playlist$/;
       if ($found_playlist =~ $re)
       {
         #Read in the playlist from the computer
         $found = 1;
-        open (my $playlist_handle, "<", $computer . $playlist);
+        open (my $playlist_handle, "<", $FileNames::playlist);
         my @new_playlist = <$playlist_handle>;
         my $new_playlist = join ("", @new_playlist);
         close($playlist_handle);
@@ -87,7 +82,8 @@ if ($mode eq "i")
         }
         my $count = 0;
         my $playlist_contents = "";
-        open($playlist_handle, "<", $iPod . $playlist);
+        print $FileNames::ipodplaylistfile . "\n";
+        open($playlist_handle, "<", $FileNames::ipodplaylistfile);
         while (my $line = <$playlist_handle>)
         {
           if ($count == $location)
@@ -100,7 +96,7 @@ if ($mode eq "i")
         }
         close($playlist_handle);
         #Write everything back to the iPod
-        open($playlist_handle, ">", $iPod . $playlist);
+        open($playlist_handle, ">", $FileNames::ipodplaylistfile);
         print $playlist_handle $playlist_contents;
         last; #Don't check any more playlists after this
       }
@@ -116,34 +112,42 @@ if ($mode eq "i")
 else
 {
   #Back up the old playlist, in case we overwrote by accident
-  cp($iPod . $playlist, $iPod . $playlist . ".old") if ($mode eq "o");
+  cp($FileNames::ipodplaylist, $FileNames::ipodplaylist . ".old") if ($mode eq "o");
   #Either append or overwite the playlist
   my $write_mode = ($mode eq "o" ? ">" : ">>");
   #Read from the computer
-  open(my $read_handle, "<", $computer . $playlist) or die ("cannot open local playlist - $!");
+  open(my $read_handle, "<", $FileNames::playlist) or die ("cannot open local playlist - $!");
   my $playlist_contents = join("", <$read_handle>);
   close($read_handle);
   #Write to the iPod
-  open(my $write_handle, $write_mode, $iPod . $playlist) or die ("cannot open iPod playlist - $!");
+  open(my $write_handle, $write_mode, $FileNames::playlist) or die ("cannot open iPod playlist - $!");
   print $write_handle $playlist_contents;
   close($write_handle);
 }
 #Wipe out the temporary playlist
-open (my $wiper, ">", $computer . $playlist);
+open (my $wiper, ">", $FileNames::playlist);
 print $wiper "";
 close($wiper);
 print "Playlist written\n";
 
 #Backup the library
 print "Backing up music... ";
-copy_dir($music_folder, "Music", 1);
+copy_dir($FileNames::ipodroot . $FileNames::musicdir . '/', $FileNames::musicdir, 1);
 print "Done\n";
 
 print "Backing up podcasts... ";
-copy_dir($iPod . $podcast_folder, "Podcasts", 1);
+copy_dir($FileNames::ipodpodcasts . "/", $FileNames::podcastdir, 1);
 print "Done\n";
 
 print "Backing up playlists... ";
-copy_dir($iPod . $playlist_folder, "Playlists", 1);
-copy_file($bookmarkfile, $bookmark_loc);
+copy_dir($FileNames::ipodplaylist . "/", $FileNames::playlistdirname, 1);
+copy_file($FileNames::ipodbookmark, $FileNames::bookmark);
 print "Done\n";
+
+
+# Suppress some "used only once" warnings
+my $a;
+$a = $FileNames::playlistfile;
+$a = $FileNames::podcastdir;
+$a = $FileNames::bookmark;
+$a = $FileNames::lockfile;

@@ -10,4 +10,3 @@ our %creds = ('hostname' => 'localhost',
 			  'database' => 'podcasts',
 			  'user'     => 'root',
 			  'password' => 'root');
-
