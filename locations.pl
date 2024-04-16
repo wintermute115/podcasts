@@ -9,16 +9,18 @@ our $ipodroot = '/media/ross/iPodClassic/';
 our $root = $home . 'Downloads/New_Podcasts/';
 our $podcastdir = 'Podcasts';
 our $playlistdirname = 'Playlists';
-our $playlistdir = $root . $playlistdirname;
-our $playlistfile = 'Podcasts.m3u8';
-our $playlist = $playlistdir . '/' . $playlistfile;
 our $musicdir = 'Music';
+our $playlistfile = 'Podcasts.m3u8';
+our $bookmark = '.rockbox/most-recent.bmark';
+
+our $playlistdir = $root . $playlistdirname;
+our $playlist = $playlistdir . '/' . $playlistfile;
 our $basedir = $root . $podcastdir;
 our $lockfile = $root . 'podcasts.lock';
 our $archive = $root . 'archive/';
+
 our $backup = $home . 'Documents/ipod/';
 our $db_backup = $home . '/pCloudDrive/podcasts.sql';
-our $bookmark = '.rockbox/most-recent.bmark';
 
 our $ipodplaylist = $ipodroot . $playlistdirname;
 our $ipodplaylistfile = $ipodroot . $playlistdirname . '/'. $playlistfile;
