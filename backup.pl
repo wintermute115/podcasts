@@ -14,8 +14,6 @@ sub copy_dir
 	my $dest = $FileNames::backup . $_[1];
 	my $delete = $_[2];
 
-	print $source . "\n";
-	print $dest . "\n";
 	my $sync = File::Rsync->new(src=>$source, dest=>$dest, delete=>$delete, archive=>1);
 
 	$sync->exec();

@@ -26,17 +26,17 @@ my $padding;
 
 die ("A download is in progress; Please try again later.\n") if (-e($FileNames::lockfile));
 die ("iPod not attached!\n") unless (-e($FileNames::ipodroot));
-die ("No bookmark file found!") unless (-e($FileNames::ipodplaylist));
-die ("No playlist file found!") unless (-e($FileNames::ipodroot . $playlist));
+die ("No bookmark file found!") unless (-e($FileNames::ipodbookmark));
+die ("No playlist file found!") unless (-e($FileNames::ipodplaylistfile));
 
-open(my $bookmarks, "<", $FileNames::ipodplaylist);
+open(my $bookmarks, "<", $FileNames::ipodbookmark);
 while (my $bookmark = <$bookmarks>) {
 	if ($bookmark =~ $bookmark_regex) {
 		my $location = $1;
 		my $found_playlist = $3;
 		my $re = qr/$playlist$/;
 		if ($found_playlist =~ $re) {
-			open(my $filelist, "<", $FileNames::ipodroot . $playlist);
+			open(my $filelist, "<", $FileNames::ipodplaylistfile);
 			FILES:
 			while (my $file = <$filelist>) {
 				chomp($file);
@@ -72,3 +72,7 @@ while (($key, $val) = each(@keys)) {
 	$padding = $max_len - $len;
 	print "$val: " . (" " x $padding) . ("X" x $per_podcast{$val}) . "\n";
 }
+
+# Preventing warnings
+my $a;
+$a = $FileNames::lockfile;

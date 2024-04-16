@@ -5,6 +5,7 @@ use strict;
 package FileNames;
 
 our $home = '/home/ross/';
+our $ipodroot = '/media/ross/iPodClassic/';
 our $root = $home . 'Downloads/New_Podcasts/';
 our $podcastdir = 'Podcasts';
 our $playlistdirname = 'Playlists';
@@ -19,7 +20,6 @@ our $backup = $home . 'Documents/ipod/';
 our $db_backup = $home . '/pCloudDrive/podcasts.sql';
 our $bookmark = '.rockbox/most-recent.bmark';
 
-our $ipodroot = '/media/ross/iPodClassic/';
 our $ipodplaylist = $ipodroot . $playlistdirname;
 our $ipodplaylistfile = $ipodroot . $playlistdirname . '/'. $playlistfile;
 our $ipodbookmark = $ipodroot . $bookmark;
