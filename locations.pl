@@ -20,7 +20,7 @@ our $lockfile = $root . 'podcasts.lock';
 our $archive = $root . 'archive/';
 
 our $backup = $home . 'Documents/ipod/';
-our $db_backup = $home . '/pCloudDrive/podcasts.sql';
+our $db_backup = $home . 'pCloudDrive/podcasts.sql';
 
 our $ipodplaylist = $ipodroot . $playlistdirname;
 our $ipodplaylistfile = $ipodroot . $playlistdirname . '/'. $playlistfile;

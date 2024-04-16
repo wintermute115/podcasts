@@ -139,7 +139,8 @@ sub close_connection
 sub dump_database
 {
 	#Back up db to the cloud
-	system("mysqldump -uroot -proot " . $DB::tablename . " > '" . $FileNames::db_backup . "'");
+	my $db_backup = "mysqldump -u" . $DB::creds{'user'} . " -p" . $DB::creds{'password'} . " " . $DB::tablename . " > '" . $FileNames::db_backup . "'";
+	system($db_backup);
 }
 
 1;
