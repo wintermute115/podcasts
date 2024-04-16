@@ -28,8 +28,6 @@ sub copy_file
 	my $source = $_[0];
 	my $dest = $FileNames::backup . $_[1];
 
-	print $source . "\n";
-	print $dest . "\n";
 	cp($source, $dest);
 
 }
