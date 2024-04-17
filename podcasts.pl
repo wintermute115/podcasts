@@ -475,7 +475,7 @@ sub fix_art {
 		if (open(my $fh_raw, "<:raw", \$raw_img)) {
 			my $converter = Imager->new();
 			$converter->read(fh=>$fh_raw);
-				if (defined($converter::IMG)){ # Skip this if there's an issue
+			if ($converter->errstr() eq "") { # Skip this if there's an issue
 				$converter = $converter->scale(xpixels=>500, ypixels=>500, type=>'min');
 				my $final_img;
 				# Write to a stream that can be written into the ID# tag
