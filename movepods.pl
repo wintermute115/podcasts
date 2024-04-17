@@ -82,7 +82,6 @@ if ($mode eq "i")
         }
         my $count = 0;
         my $playlist_contents = "";
-        print $FileNames::ipodplaylistfile . "\n";
         open($playlist_handle, "<", $FileNames::ipodplaylistfile);
         while (my $line = <$playlist_handle>)
         {
