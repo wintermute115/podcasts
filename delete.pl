@@ -23,6 +23,7 @@ my @keys;
 my $max_len = 0;
 my $len;
 my $padding;
+my @fail_list;
 
 die ("A download is in progress; Please try again later.\n") if (-e($FileNames::lockfile));
 die ("iPod not attached!\n") unless (-e($FileNames::ipodroot));
@@ -39,7 +40,7 @@ while (my $bookmark = <$bookmarks>) {
 			open(my $filelist, "<", $FileNames::ipodplaylistfile);
 			FILES:
 			while (my $file = <$filelist>) {
-				chomp($file);
+				$file =~ s/[^[:print:]]//g;
 				if (-e($FileNames::ipodroot . $file)) {
 					$deleted++;
 					$size += -s($FileNames::ipodroot . $file);
@@ -54,6 +55,8 @@ while (my $bookmark = <$bookmarks>) {
 					if (length($directory) > $max_len) {
 						$max_len = length($directory);
 					}
+				} else {
+					push(@fail_list, $file);
 				}
 				$counter++;
 				if ($counter == $location) {
@@ -71,6 +74,13 @@ while (($key, $val) = each(@keys)) {
 	$len = length($val);
 	$padding = $max_len - $len;
 	print "$val: " . (" " x $padding) . ("X" x $per_podcast{$val}) . "\n";
+}
+
+if (scalar @fail_list > 0) {
+	print "The following files could not be located:\n";
+	for my $failed(@fail_list) {
+		print $failed . "\n";
+	}
 }
 
 # Preventing warnings
