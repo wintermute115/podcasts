@@ -150,3 +150,4 @@ $a = $FileNames::playlistfile;
 $a = $FileNames::podcastdir;
 $a = $FileNames::bookmark;
 $a = $FileNames::lockfile;
+$a = $FileNames::ipodplaylist;
