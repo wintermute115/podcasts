@@ -111,7 +111,7 @@ if ($mode eq "i")
 else
 {
   #Back up the old playlist, in case we overwrote by accident
-  cp($FileNames::ipodplaylist, $FileNames::ipodplaylist . ".old") if ($mode eq "o");
+  cp($FileNames::ipodplaylistfile, $FileNames::ipodplaylistfile . ".old") if ($mode eq "o");
   #Either append or overwite the playlist
   my $write_mode = ($mode eq "o" ? ">" : ">>");
   #Read from the computer
@@ -119,7 +119,7 @@ else
   my $playlist_contents = join("", <$read_handle>);
   close($read_handle);
   #Write to the iPod
-  open(my $write_handle, $write_mode, $FileNames::ipodplaylist) or die ("cannot open iPod playlist - $!");
+  open(my $write_handle, $write_mode, $FileNames::ipodplaylistfile) or die ("cannot open iPod playlist - $!");
   print $write_handle $playlist_contents;
   close($write_handle);
 }
