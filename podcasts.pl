@@ -211,6 +211,7 @@ while (my $row = $rs->each)
 		my $broken = 0;
 		mkdir($FileNames::archive) unless (-d($FileNames::archive));
 		my $filename = $FileNames::archive . $name . ".rss";
+		my $error_name = $FileNames::archive . $name . ".error.txt";
 		# set up cURL options
 		try
 		{
@@ -229,12 +230,12 @@ while (my $row = $rs->each)
 		}
 		if (!defined($feed))
 		{
-			$broken = 1;
+			$broken = 2;
 		}
 		if ($broken)
 		{
-			print " -- Unreadable\n";
-			open (my $archive_handle, ">>", $filename);
+			print " -- Unreadable $broken\n";
+			open (my $archive_handle, ">>", $error_name);
 			binmode $archive_handle, ":utf8";
 			print $archive_handle "Could not access RSS file: " . gettime() . "\n";
 			close ($archive_handle);
