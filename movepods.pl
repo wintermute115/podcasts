@@ -130,15 +130,15 @@ close($wiper);
 print "Playlist written\n";
 
 #Backup the library
-print "Backing up music... ";
+print "Backing up music… ";
 copy_dir($FileNames::ipodroot . $FileNames::musicdir . '/', $FileNames::musicdir, 1);
 print "Done\n";
 
-print "Backing up podcasts... ";
+print "Backing up podcasts… ";
 copy_dir($FileNames::ipodpodcasts . "/", $FileNames::podcastdir, 1);
 print "Done\n";
 
-print "Backing up playlists... ";
+print "Backing up playlists… ";
 copy_dir($FileNames::ipodplaylist . "/", $FileNames::playlistdirname, 1);
 copy_file($FileNames::ipodbookmark, $FileNames::bookmark);
 print "Done\n";

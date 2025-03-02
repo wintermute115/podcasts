@@ -79,7 +79,7 @@ if ($list ne "")
 		$order = "date";
 	} elsif ($list eq "i") {
 		$order = "id";
-	}
+	} 
 	my $rs = get_podcast_rows($conn, $order);
 	my $header_row = $rs->each;
 	my $id_len = $header_row->[0];
@@ -339,6 +339,7 @@ while (my $row = $rs->each)
 					binmode($write_handle);
 					print $write_handle $final_data;
 					close($write_handle);
+					undef($final_data);
 					# Deal with tags;
 					check_title($fullname, $title);
 					fix_art($fullname);
@@ -420,7 +421,10 @@ sub get_savename {
 	my $save_name;
 
 	($base, $ext) = $fname =~ /(.*)\.(.*?)$/;
-	# ($base, $ext) = split(/\.([^\.]+)$/, $fname);
+
+	if (length($base) > 100) {
+		$base = substr($base, 0, 100);
+	}
 
 	my @alphabet = ('0' ..'9', 'A' .. 'Z', 'a' .. 'z');
 	my $suffix = join '' => map($alphabet[rand(@alphabet)], 1 .. 4);
