@@ -422,8 +422,8 @@ sub get_savename {
 
 	($base, $ext) = $fname =~ /(.*)\.(.*?)$/;
 
-	if (length($base) > 100) {
-		$base = substr($base, 0, 100);
+	if (length($base) > 50) {
+		$base = substr($base, 0, 50);
 	}
 
 	my @alphabet = ('0' ..'9', 'A' .. 'Z', 'a' .. 'z');
