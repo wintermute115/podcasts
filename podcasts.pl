@@ -21,7 +21,8 @@ use Number::Format;
 use String::Util qw(trim);
 use Term::ANSIColor;
 use Time::Local qw(timelocal_modern);
-use Try;
+# use Try::Tiny;
+use experimental 'try';
 use URI::Escape;
 use XML::RSS::Parser;
 
@@ -169,7 +170,7 @@ try
 	$curl->setopt(CURLOPT_URL, "http://www.google.com");
 	$curl->perform();
 }
-catch
+catch ($e)
 {
 	die ("Cannot connect to the Internet\n");
 }
@@ -224,12 +225,11 @@ while (my $row = $rs->each)
 			$curl->setopt(CURLOPT_WRITEDATA, \$feed);
 			$curl->perform();
 		}
-		catch
+		catch ($e)
 		{
 			$broken = 1; #putting next in here complains that it's exiting a subroutine
 		}
-		if (!defined($feed))
-		{
+		if (!defined($feed)) {
 			$broken = 2;
 		}
 		if ($broken)
@@ -276,8 +276,11 @@ while (my $row = $rs->each)
 
 		my $rss = $parser->parse_string($feed);
 		if(!$rss) {
-			print " -- Feed is broken -- \n";
-			next FEED;
+			$rss = $parser->parse_file($filename);
+			if(!$rss) {
+				print " -- Feed is broken -- \n";
+				next FEED;
+			}
 		}
 
 		my $new_last_download = $last_download;
@@ -474,10 +477,11 @@ sub check_title {
 sub fix_art {
 	# Make sure that any album art embedded in the file is properly formatted for RockBox
 	my $file = $_[0];
+	my $fh_raw;
 	my $mp3 = MP3::Tag->new($file);
 	if ($mp3->have_id3v2_frame_by_descr("APIC")) {
 		my $raw_img = $mp3->select_id3v2_frame_by_descr("APIC");
-		if (open(my $fh_raw, "<:raw", \$raw_img)) {
+		if (open($fh_raw, "<:raw", \$raw_img)) {
 			my $converter = Imager->new();
 			$converter->read(fh=>$fh_raw, png_ignore_benign_errors => 1);
 			if ($converter->errstr() eq "") { # Skip this if there's an issue

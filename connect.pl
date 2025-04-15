@@ -2,7 +2,8 @@
 
 use strict;
 
-use Try;
+# use Try::Tiny;
+use experimental 'try';
 use File::Basename;
 use Net::MySQL;
 use Switch;
@@ -22,7 +23,7 @@ sub mysql_connect
 	{
 		$conn = Net::MySQL->new(%DB::creds);
 	}
-	catch
+	catch ($e)
 	{
 		die("Could not connect to database");
 	}
