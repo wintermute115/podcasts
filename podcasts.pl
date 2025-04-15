@@ -21,7 +21,6 @@ use Number::Format;
 use String::Util qw(trim);
 use Term::ANSIColor;
 use Time::Local qw(timelocal_modern);
-# use Try::Tiny;
 use experimental 'try';
 use URI::Escape;
 use XML::RSS::Parser;
@@ -276,11 +275,7 @@ while (my $row = $rs->each)
 
 		my $rss = $parser->parse_string($feed);
 		if(!$rss) {
-			$rss = $parser->parse_file($filename);
-			if(!$rss) {
-				print " -- Feed is broken -- \n";
-				next FEED;
-			}
+			next FEED;
 		}
 
 		my $new_last_download = $last_download;

@@ -2,7 +2,6 @@
 
 use strict;
 
-# use Try::Tiny;
 use experimental 'try';
 use File::Basename;
 use Net::MySQL;
